@@ -1,0 +1,14 @@
+--- a/src/compat/compat-asm.h
++++ b/src/compat/compat-asm.h
+@@ -39,9 +39,11 @@
+ #undef pull
+ #endif
+ 
++#ifndef SYM_FUNC_START
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 0)
+ #define SYM_FUNC_START ENTRY
+ #define SYM_FUNC_END ENDPROC
+ #endif
++#endif
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)
