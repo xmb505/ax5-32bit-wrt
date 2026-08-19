@@ -1,0 +1,24 @@
+--- a/make/target.mk
++++ b/make/target.mk
+@@ -18,16 +18,16 @@
+ obj: $(OBJ_LIST)
+ 	$(OBJ_LOOP)
+ 
+-dep: build_dir $(DEP_LIST)
++dep: build_dir $(DEP_FILE)
+ 	$(DEP_LOOP)
+ 
+ $(OBJ_LIST): %.o : %.c %.d
+ 	$(CC) $(CFLAGS) $(LOCAL_CFLAGS) -c $< -o $(DST_DIR)/$@
+ 
+-$(DEP_LIST) : %.d : %.c
+-	$(CC) $(CFLAGS) $(LOCAL_CFLAGS) -MM $< > $(DST_DIR)/$@.tmp
+-	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $(DST_DIR)/$@.tmp > $(DST_DIR)/$@
+-	$(RM) -f $(DST_DIR)/$@.tmp;
++$(DEP_FILE) : $(DST_DIR)/%.d : %.c
++	$(CC) $(CFLAGS) $(LOCAL_CFLAGS) -MM $< > $@.tmp
++	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.tmp > $@
++	$(RM) -f $@.tmp;
+ 
+ build_dir: $(DST_DIR)
+ 
