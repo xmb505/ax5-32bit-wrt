@@ -20,12 +20,18 @@ HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
+# libelf 0.8.13 predates C99 prototypes; GCC 14 treats implicit int/func
+# declarations as errors, so relax them for configure and the build.
+HOST_CONFIGURE_VARS += \
+	CFLAGS="$(HOST_CFLAGS) -Wno-implicit-int -Wno-implicit-function-declaration"
+
 HOST_CONFIGURE_ARGS += \
 	--disable-shared \
 	--enable-elf64
 
 define Host/Configure
         (cd $(HOST_BUILD_DIR)/$(3); \
+                $(HOST_CONFIGURE_VARS) \
                 $(HOST_CONFIGURE_CMD) \
                 $(HOST_CONFIGURE_ARGS); \
         )

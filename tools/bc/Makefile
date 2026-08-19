@@ -18,4 +18,8 @@ PKG_HASH:=7ee4abbcfac03d8a6e1a8a3440558a3d239d6b858585063e745c760957725ecc
 
 include $(INCLUDE_DIR)/host-build.mk
 
+# bc's autoconf ptrdiff_t probe fails under GCC 14, emitting a bogus
+# `#define ptrdiff_t size_t`; preload the cache var to skip the probe.
+HOST_CONFIGURE_VARS += ac_cv_type_ptrdiff_t=yes
+
 $(eval $(call HostBuild))
