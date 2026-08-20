@@ -1,5 +1,12 @@
-# ax5-32bit 编译进度交接 - v13 (✅ NWRT 内核 + 完美补全精简 rootfs)
+# ax5-32bit 编译进度交接 - v13.9 (✅ 已发布, 含 HAKU WRT 面板)
 
+> **当前最终状态 (2026-08-21)**: v13.9 已发布到本仓库 `release/` 目录并推送至
+> GitHub `xmb505/ax5-32bit-wrt` 分支 `AX5-NwrtKernel`。
+> rootfs 已集成 haku_wrt 控制面板。WiFi / NSS / DHCP / LuCI 全部实测通过。
+>
+> **注意**: 下文 v13-release-v8 的本地路径与 SHA 是历史中间版本记录，
+> 最终出货产物一律以 `release/` 目录及 `release/CHECKSUM.txt` 为准。
+>
 > 用户的策略：**用 NWRT 已经验证能完美启动的 5.4.213 内核 + 我们极限精简且补全固件的 rootfs**，组合成 factory.ubi。
 > 成功解决了所有物理总线死锁、分区挂载死锁、NSS/WiFi 崩溃死锁等底层问题！
 

@@ -47,6 +47,9 @@
 │   ├── ax5-32bit-v13.9-kernel-fit.itb  # 3.9MB standalone 内核 FIT image (供备用)
 │   ├── .config                         # 281KB 编译配置参考
 │   ├── ubinize.cfg                     # UBI 卷配置文件
+│   ├── customize.sh                    # 🎨 一键"塞自定义文件 + 重打包 UBI"脚本
+│   ├── customize/                      # 📂 你的自定义文件按目标路径放这里
+│   ├── CUSTOMIZE.md                    # 📖 自定义 rootfs 完整指南
 │   ├── pack-ubi.sh                     # ⚙️ 一键重新拼装为 .ubi 镜像的脚本
 │   ├── build.sh                        # 🚀 路由器 SSH 一键烧写脚本 (sys1 -> sys2 互刷)
 │   ├── flash-via-tftp.sh               # 🚑 串口 TFTP 应急救援脚本 (变砖用)
@@ -129,21 +132,26 @@ reset
 
 ---
 
-## 7. 🛠️ 下一步开发?
+## 7. 🛠️ 塞自己的文件进 rootfs / 重新打包
 
-如果你想修改 rootfs (如增加你自己的管理面板、裁剪掉不需要的包)：
+不需要编译任何东西。开发机装好 `squashfs-tools` + `mtd-utils` 后：
 
-1. **不要** 在巨无霸 build tree 里重新 `make` 浪费生命。
-2. 遵循 **[`doc/NWRT_FACTORY_REFERENCE.md`](doc/NWRT_FACTORY_REFERENCE.md)** §6 的修补清单。
-3. 直接用 `unsquashfs` 解包我们的 `.ubi` 中的 rootfs 分区。
-4. 修改你的自定义文件或管理面板可执行文件。
-5. 重新打包：
-   ```bash
-   mksquashfs squashfs-root/ new-rootfs.squashfs -comp xz -b 128K
-   ```
-6. 用 `ubinize` 或我们的 `build.sh` 合成新的 `.ubi` 烧写。
+```bash
+cd release/
 
-这样修改一个自定义包只需要 **30秒**！
+# 1. 按目标路径放文件 (customize/usr/bin/myapp -> 路由器 /usr/bin/myapp)
+mkdir -p customize/usr/bin
+cp myapp customize/usr/bin/ && chmod +x customize/usr/bin/myapp
+
+# 2. 一键重打包 (自动 unsquashfs -> 注入 -> mksquashfs xz -> ubinize)
+./customize.sh
+
+# 3. 刷 ax5-32bit-v13.9-release-custom.ubi (方法同第 4 节)
+```
+
+整个流程只要 **30 秒**。原理、坑点（必须 xz 压缩、卷名必须叫 `rootfs`、别动内核卷等）详见 **[`release/CUSTOMIZE.md`](release/CUSTOMIZE.md)**。
+
+如果你想做深度魔改（裁剪包、换 LuCI、改 WiFi 脚本），再看 **[`doc/NWRT_FACTORY_REFERENCE.md`](doc/NWRT_FACTORY_REFERENCE.md)** §6 的修补清单。
 
 ---
 
