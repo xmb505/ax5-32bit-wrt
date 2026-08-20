@@ -1,0 +1,9 @@
+# Build outputs and OpenWrt build dir
+bin/
+src/
+
+# OS junk
+.DS_Store
+*.swp
+*~
+*.tmp
