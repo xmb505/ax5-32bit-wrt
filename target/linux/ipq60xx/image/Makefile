@@ -111,6 +111,11 @@ endef
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	$$(if $$(CONFIG_DEBUG), ,$$(call sizecheck, $(IPQ60XX_ROOTFS_SIZE), $(KDIR)/root.squashfs))
+	sed -e 's|^image=fit-|image=$(KDIR)/fit-|' \
+	    -e 's|^image=root\.squashfs|image=$(KDIR)/root.squashfs|' \
+	    $(CURDIR)/ubinize-$(SUBTARGET).cfg > $(KDIR)/ubinize.cfg && \
+	$(STAGING_DIR_HOST)/bin/ubinize -o $(BIN_DIR)/$(IMG_PREFIX)-squashfs-factory.ubi \
+	    -m 2048 -p 128KiB $(KDIR)/ubinize.cfg
 endef
 
 define Image/Build
