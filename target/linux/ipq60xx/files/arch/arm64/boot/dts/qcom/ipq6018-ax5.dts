@@ -24,8 +24,7 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs = "console=ttyMSM0,115200n8 root=/dev/ubiblock0_1 rw rootwait init=/sbin/init";
-		bootargs-append = " swiotlb=1 coherent_pool=2M";
+		bootargs = "console=ttyMSM0,115200n8 ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs rootwait init=/sbin/init swiotlb=1 coherent_pool=2M";
 	};
 };
 

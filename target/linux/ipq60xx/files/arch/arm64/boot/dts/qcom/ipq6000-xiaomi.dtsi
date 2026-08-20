@@ -25,7 +25,6 @@
 	};
 
 	chosen {
-		bootargs-append = " swiotlb=1 coherent_pool=2M";
 	};
 
 	leds {
