@@ -18,13 +18,13 @@
 	#address-cells = <0x2>;
 	#size-cells = <0x2>;
 	model = "Redmi AX5";
-	compatible = "redmi,ax5", "qcom,ipq6018";
+	compatible = "redmi,ax5", "qcom,ipq6018-ap-cp03-c1", "qcom,ipq6018";
 	qcom,msm-id = <0x192 0x0>;
 	interrupt-parent = <&intc>;
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs = "console=ttyMSM0,115200n8 ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs rootwait init=/sbin/init swiotlb=1 coherent_pool=2M";
+		bootargs = "ubi.mtd=rootfs_1 root=mtd:ubi_rootfs rootfstype=squashfs rootwait uart_en=1 root=/dev/ubiblock0_1 swiotlb=1 coherent_pool=2M";
 	};
 };
 
