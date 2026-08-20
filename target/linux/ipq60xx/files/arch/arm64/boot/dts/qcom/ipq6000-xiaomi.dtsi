@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 // Redmi AX5 (RA67) private board wire-up for IPQ6018 32-bit build.
-// Includes only Xiaomi-private overlays (LEDs/keys/aliases); dp/switch/mdio
-// nodes live in the per-board ipq6018-ax5.dts because the 32-bit QSDK 5.4
-// ipq6018.dtsi does not expose dp1-dp5 labels the way the 64-bit one does.
+// This overlay carries the Xiaomi-private LEDs/keys/aliases; dp/switch/mdio
+// and pinctrl definitions live in ipq6018-ax5.dts (where they can reference
+// platform pins defined in dtsi).
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -25,8 +25,7 @@
 	};
 
 	chosen {
-		stdout-path = "serial0:115200n8";
-		bootargs-append = " root=/dev/ubiblock0_1 swiotlb=1 coherent_pool=2M";
+		bootargs-append = " swiotlb=1 coherent_pool=2M";
 	};
 
 	leds {
@@ -70,44 +69,7 @@
 	};
 };
 
-&tlmm {
-	leds_pins: leds_pins {
-		mux {
-			pins = "gpio29", "gpio30", "gpio31", "gpio32";
-			function = "gpio";
-			drive-strength = <8>;
-			bias-pull-down;
-		};
-	};
-
-	button_pins: button_pins {
-		reset_button {
-			pins = "gpio19";
-			function = "gpio";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-	};
-
-	mdio_pins: mdio-pinmux {
-		mdc {
-			pins = "gpio64";
-			function = "mdc";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-		mdio {
-			pins = "gpio65";
-			function = "mdio";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
-	};
-};
-
 &blsp1_uart3 {
-	pinctrl-0 = <&serial_3_pins>;
-	pinctrl-names = "default";
 	status = "ok";
 };
 

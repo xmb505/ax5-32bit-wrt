@@ -111,6 +111,17 @@ endef
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	$$(if $$(CONFIG_DEBUG), ,$$(call sizecheck, $(IPQ60XX_ROOTFS_SIZE), $(KDIR)/root.squashfs))
+	$(TOPDIR)/scripts/mkits.sh \
+		-D ipq6018-ax5 -o $(KDIR)/fit-ax5-nand.its \
+		-k $(KDIR)/$(KIMAGE) -d $(DTS_DIR)/ipq6018-ax5.dtb \
+		-C $(COMP_TYPE) -a $(IPQ60XX_32_KERNEL_LOADADDR) -e $(IPQ60XX_32_KERNEL_LOADADDR) \
+		-c "config@cp03-c1" -A $(LINUX_KARCH) -v $(LINUX_VERSION)
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $(KDIR)/fit-ax5-nand.its $(KDIR)/fit-ax5-nand.itb
+	sed -e 's|^image=fit-|image=$(KDIR)/fit-|' \
+	    -e 's|^image=root\.squashfs|image=$(KDIR)/root.squashfs|' \
+	    $(CURDIR)/ubinize-$(SUBTARGET).cfg > $(KDIR)/ubinize.cfg && \
+	$(STAGING_DIR_HOST)/bin/ubinize -o $(BIN_DIR)/$(IMG_PREFIX)-squashfs-factory.ubi \
+	    -m 2048 -p 128KiB $(KDIR)/ubinize.cfg
 endef
 
 define Image/Build
