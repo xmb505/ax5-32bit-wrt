@@ -20,8 +20,9 @@ Files in this directory:
 
 SHA256:
 
-  ax5-32bit-v13.9-release.ubi:    3055c493ba22147ea78b153b6ad26460e768237bba84fb86843d941c15552221
+  ax5-32bit-v13.9-release.ubi:    45501a97d7050477a68a2bd05efddcea6d9ee576a4aec29ec1e499fcb03a1bc3
   ax5-32bit-v13.9-kernel-fit.itb: 190de0d8ce00db5f49c2e422771b562c28603a1026a9c802da5859f1cd7be043
+  ax5-32bit-v13.9-rootfs.squashfs: da7440d800900e6ed33cb86389e7b289cd4233d605080eda9dc953ce16c54b07
   .config:                       84efc08a8eacd5c7969cc6a252949fb5c91c824e172562440d6d823028acf017
 
 ---
