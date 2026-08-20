@@ -26,7 +26,7 @@
 
 我们花了几十个小时，通过 **NWRT 原厂 5.4 内核 (绕过 Secure Boot)** + **手工高精度剥离 4KB 损坏头部** + **高精度裁剪 NWRT rootfs** + **补齐所有依赖库**，手工拼装出了这个**世界上唯一在 AX5 上满血加速、稳定跑 WiFi 的 32-bit UBI 固件**。
 
-本仓库就是用来**分发这个成果的，没有任何无用代码，24MB 即开即用**！
+本仓库就是用来**分发这个成果的，没有任何无用代码，38MB 即开即用**！
 
 ---
 
@@ -41,10 +41,13 @@
 │   ├── NWRT_FACTORY_REFERENCE.md # NWRT 原厂 vs 我们 rootfs 核心对比
 │   └── WIFI_IMPLEMENTATION.md  # 🛠️ 开发者速查手册 (文件、命令、调试技巧)
 │
-├── release/                    # 📦 真正有用的烧写包与脚本 (24MB)
+├── release/                    # 📦 真正有用的烧写包与脚本 (38MB)
 │   ├── ax5-32bit-v13.9-release.ubi     # 🌟 20MB 最终 UBI 刷写固件 (包含内核与文件系统)
+│   ├── ax5-32bit-v13.9-rootfs.squashfs # 🛠️ 14.5MB 拼装好的满血 rootfs (squashfs-xz)
 │   ├── ax5-32bit-v13.9-kernel-fit.itb  # 3.9MB standalone 内核 FIT image (供备用)
 │   ├── .config                         # 281KB 编译配置参考
+│   ├── ubinize.cfg                     # UBI 卷配置文件
+│   ├── pack-ubi.sh                     # ⚙️ 一键重新拼装为 .ubi 镜像的脚本
 │   ├── build.sh                        # 🚀 路由器 SSH 一键烧写脚本 (sys1 -> sys2 互刷)
 │   ├── flash-via-tftp.sh               # 🚑 串口 TFTP 应急救援脚本 (变砖用)
 │   └── CHECKSUM.txt                    # 校验和与手工拼装流程说明
