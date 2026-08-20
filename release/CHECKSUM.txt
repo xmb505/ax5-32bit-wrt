@@ -1,0 +1,130 @@
+AX5-32Bit v13.9 release
+======================
+
+**⚠️ 这是手工拼出来的镜像,不是 OpenWrt `make` 编译产物。**
+
+不要指望 clone + `cd src && make` 能产出这个 `.ubi`。
+这是从 NWRT QSDK 12.2 factory 镜像 + 手工剥 kernel + 手工裁剪
++ 重打包 rootfs 拼出来的。详见下文。
+
+---
+
+Files in this directory:
+
+  ax5-32bit-v13.9-release.ubi     20MB    最终 UBI 镜像 (kernel + rootfs)
+  ax5-32bit-v13.9-kernel-fit.itb  3.9MB   单独的 kernel FIT image
+  .config                        281KB   OpenWrt build config (参考,不能直接 make 出镜像)
+  build.sh                       SSH 烧写脚本 (正常运行流程)
+  flash-via-tftp.sh              串口/TFTP 救援脚本 (砖了用)
+  CHECKSUM.txt                   本文件
+
+SHA256:
+
+  ax5-32bit-v13.9-release.ubi:    3055c493ba22147ea78b153b6ad26460e768237bba84fb86843d941c15552221
+  ax5-32bit-v13.9-kernel-fit.itb: 190de0d8ce00db5f49c2e422771b562c28603a1026a9c802da5859f1cd7be043
+  .config:                       84efc08a8eacd5c7969cc6a252949fb5c91c824e172562440d6d823028acf017
+
+---
+
+WiFi (verified Aug 21 2026):
+
+  5G:    Nwrt_5G, chan 149, 802.11axa, WPA2-PSK, password 12345678
+  2.4G:  Nwrt_2.4G, chan 13, 802.11axg, WPA2-PSK, password 12345678
+
+---
+
+## 这是怎么"拼"出来的 (不是 `make`)
+
+整个流程是手工的,核心步骤:
+
+### 1. Kernel - 从 NWRT factory UBI 剥出来
+
+```
+NWRT factory bin → 7z 解开 → img-*_vol-rootfs.ubifs (36MB)
+                  → img-*_vol-kernel (4MB)
+kernel 包含 4KB UBI metadata header 每 124KB 嵌入一次,直接读会错
+剥法:
+  - 扫 PEB 2-32 (跳过坏块)
+  - 剥每个 PEB 的前 4KB header
+  - 拼接干净的 124KB block
+  - 验证 FIT magic + SHA
+  → ax5-32bit-v13.9-kernel-fit.itb
+```
+
+### 2. Rootfs - 在 NWRT rootfs 基础上裁剪 + 重打包
+
+```
+NWRT 19.07 rootfs (OpenWrt base, ~30MB unstripped)
+  ↓
+裁剪:
+  - 删 kmod-qca-nss-ecm-* plugins (我们不用 SOHO 加速)
+  - 删 luci-theme-material (我们只用 bootstrap)
+  - 删 wifi_hw_mode 等 NWRT 工具 (我们用 NWRT 原厂的)
+  - 删未用 firmware blobs
+  - 压缩到 ~14MB
+
+加回 (NWRT 必须):
+  - /lib/wifi/qcawificfg80211.sh (246KB, 主 wifi up 路径)
+  - /lib/wifi/qcawifi.sh (148KB, ACFG fallback)
+  - /lib/wifi/hostapd.sh + wpa_supplicant.sh (85+18KB)
+  - /lib/wifi/.first_time_boot (空文件,触发 boot wifi up)
+  - /usr/sbin/{hostapd, wpa_supplicant, acfg_tool, wlanconfig, cfg80211tool*}
+  - /usr/sbin/{wifi_hw_mode, wifi_try, wifistats, wlanfw-upgrade.sh}
+  - /usr/lib/{libnettle.so.8.4, libhogweed.so.6.4} (实文件,不是空软链)
+  - /etc/config/qcacfg80211 (option enable 1)
+
+加 ini 配置 (NWRT FW 必须):
+  - /ini/global.ini (cfg80211_config=0)
+  - /ini/QCA6018.ini (board id)
+  - /ini/internal/global_i.ini (fast_boot_vap_mode=1)
+  - /ini/internal/QCA6018_i.ini (datapath config)
+  - 其他 11 个 _i.ini (不同 chip 的 fallback)
+
+加 init.d:
+  - qca-acfg (acfg_tool -e -s)
+  - qcawifi-config-cmd (boot wifi config 生成)
+  - qca-hostapd (空 global hostapd)
+  - qca-wpa-supplicant (空 global wpa_supplicant)
+  - wifi_fw_done + wifi_fw_mount
+
+Squashfs 打包:
+  mksquashfs rootfs/ rootfs.squashfs -comp xz -b 128K
+  → 14MB squashfs (NWRT 内核只支持 xz,不支持 zlib)
+```
+
+### 3. UBI 打包
+
+```
+ubinize.cfg:
+  [kernel]
+  vol_name=kernel
+  vol_type=static
+  vol_id=0
+  size=3936256  (3.75MB, AX5 mtd22 大小)
+  image=kernel_itb
+
+  [rootfs]
+  vol_name=rootfs
+  vol_type=dynamic
+  vol_id=1
+  image=rootfs.squashfs
+
+ubiattach /dev/ubi_ctrl -m 6 -d 0
+ubimkvol /dev/ubi0 -N kernel -s 3936256
+ubimkvol /dev/ubi0 -N rootfs --size=available
+ubigen -d 0 -p 2 -o /tmp/factory.ubi -s 2048 -m 2048 kernel rootfs
+→ ax5-32bit-v13.9-release.ubi
+```
+
+---
+
+## 完整文档
+
+详细每个步骤的命令、坑、修法都在 ../doc/ 里:
+
+- `../doc/NWRT_FACTORY_REFERENCE.md` - 整个手工拼装流程 + v14 修补清单
+- `../doc/NWRT_WIFI_BOOT_FLOW.md` - NWRT boot 序列分析
+- `../doc/WIFI_IMPLEMENTATION.md` - WiFi 配置 + debug
+- `../doc/INCIDENT_2026-08-20.md` - 调试时遇到的事故复盘
+
+要重新做一版不一样的,看 NWRT_FACTORY_REFERENCE.md §6 (v14 rootfs 修补清单)。
