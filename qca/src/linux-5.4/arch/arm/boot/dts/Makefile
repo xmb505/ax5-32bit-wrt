@@ -880,6 +880,7 @@ dtb-$(CONFIG_ARCH_QCOM) += \
 	ipq5332-db-mi01.1.dtb \
 	ipq5332-db-mi02.1.dtb \
 	ipq5332-db-mi03.1.dtb \
+	ipq6018-ax5.dtb \
 	ipq6018-cp01-c1.dtb \
 	ipq6018-cp01-c3.dtb \
 	ipq6018-cp01-c4.dtb \

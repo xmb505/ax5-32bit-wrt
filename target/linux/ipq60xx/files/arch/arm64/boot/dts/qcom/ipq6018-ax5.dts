@@ -1,0 +1,164 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+// Device tree for Redmi AX5 (model: RA67) — IPQ6018 CP01 + Qualcomm QCA8075 4-port PHY.
+// Based on the upstream QSDK 5.4 ipq6018-cp03-c1.dts template, retargeted for the
+// Xiaomi hardware: dp1-dp4 mapped to lan1/lan2/lan3/wan, QCA8075 PHYs at addr 1/2/3/4.
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-cpr-regulator.dtsi"
+#include "ipq6000-xiaomi.dtsi"
+
+/ {
+	model = "Redmi AX5";
+	compatible = "redmi,ax5", "qcom,ipq6018";
+	qcom,msm-id = <0x192 0x0>;
+	interrupt-parent = <&intc>;
+};
+
+/ {
+	soc {
+		mdio: mdio@90000 {
+			pinctrl-0 = <&mdio_pins>;
+			pinctrl-names = "default";
+			phy-reset-gpio = <&tlmm 75 0>;
+			status = "ok";
+
+			ethernet-phy-package@0 {
+				compatible = "qcom,qca8075-package";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0>;
+
+				qca8075_1: ethernet-phy@1 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <1>;
+				};
+				qca8075_2: ethernet-phy@2 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <2>;
+				};
+				qca8075_3: ethernet-phy@3 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <3>;
+				};
+				qca8075_4: ethernet-phy@4 {
+					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <4>;
+				};
+			};
+		};
+
+		ess-switch@3a000000 {
+			switch_cpu_bmp = <0x1>;  /* cpu port bitmap (ESS_PORT0) */
+			switch_lan_bmp = <0x1e>; /* lan ports (ESS_PORT1|2|3|4) */
+			switch_wan_bmp = <0x20>; /* wan port (ESS_PORT5) */
+			switch_inner_bmp = <0xc0>; /* inner ports (ESS_PORT6|7) */
+			switch_mac_mode = <0x0>; /* MAC_MODE_PSGMII — uniphy 0 */
+			switch_mac_mode1 = <0xff>; /* MAC_MODE_DISABLED */
+			switch_mac_mode2 = <0xff>; /* MAC_MODE_DISABLED */
+
+			qcom,port_phyinfo {
+				port@1 {
+					port_id = <1>;
+					phy_address = <1>;
+				};
+				port@2 {
+					port_id = <2>;
+					phy_address = <2>;
+				};
+				port@3 {
+					port_id = <3>;
+					phy_address = <3>;
+				};
+				port@4 {
+					port_id = <4>;
+					phy_address = <4>;
+				};
+			};
+		};
+
+		dp1 {
+			device_type = "network";
+			compatible = "qcom,nss-dp";
+			qcom,id = <1>;
+			reg = <0x3a001800 0x200>;
+			qcom,mactype = <0>;
+			local-mac-address = [000000000000];
+			qcom,link-poll = <1>;
+			qcom,phy-mdio-addr = <1>;
+			phy-mode = "sgmii";
+			label = "lan1";
+			phy-handle = <&qca8075_1>;
+			status = "ok";
+		};
+
+		dp2 {
+			device_type = "network";
+			compatible = "qcom,nss-dp";
+			qcom,id = <2>;
+			reg = <0x3a001000 0x200>;
+			qcom,mactype = <0>;
+			local-mac-address = [000000000000];
+			qcom,link-poll = <1>;
+			qcom,phy-mdio-addr = <2>;
+			phy-mode = "sgmii";
+			label = "lan2";
+			phy-handle = <&qca8075_2>;
+			status = "ok";
+		};
+
+		dp3 {
+			device_type = "network";
+			compatible = "qcom,nss-dp";
+			qcom,id = <3>;
+			reg = <0x3a001200 0x200>;
+			qcom,mactype = <0>;
+			local-mac-address = [000000000000];
+			qcom,link-poll = <1>;
+			qcom,phy-mdio-addr = <3>;
+			phy-mode = "sgmii";
+			label = "lan3";
+			phy-handle = <&qca8075_3>;
+			status = "ok";
+		};
+
+		dp4 {
+			device_type = "network";
+			compatible = "qcom,nss-dp";
+			qcom,id = <4>;
+			reg = <0x3a001600 0x200>;
+			qcom,mactype = <0>;
+			local-mac-address = [000000000000];
+			qcom,link-poll = <1>;
+			qcom,phy-mdio-addr = <4>;
+			phy-mode = "sgmii";
+			label = "wan";
+			phy-handle = <&qca8075_4>;
+			status = "ok";
+		};
+
+		nss-macsec0 {
+			compatible = "qcom,nss-macsec";
+			phy_addr = <0x18>;
+			phy_access_mode = <0x0>;
+			mdiobus = <&mdio>;
+		};
+	};
+};
+
+&CPU0 {
+	/delete-property/ cpu-supply;
+};
+
+&CPU1 {
+	/delete-property/ cpu-supply;
+};
+
+&CPU2 {
+	/delete-property/ cpu-supply;
+};
+
+&CPU3 {
+	/delete-property/ cpu-supply;
+};

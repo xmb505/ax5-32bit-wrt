@@ -1,0 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+// 32-bit (Cortex-A7) build of Redmi AX5 (RA67) — arch/arm stub.
+// The real board wire-up lives in arch/arm64/boot/dts/qcom/ipq6018-ax5.dts
+// (mirroring the QSDK convention where 32-bit IPs share the arm64 dts/qcom
+// source tree).
+
+/dts-v1/;
+
+#include <arm64/qcom/ipq6018-ax5.dts>
+#include "ipq6018.dtsi"
