@@ -160,7 +160,6 @@ cp myapp customize/usr/bin/ && chmod +x customize/usr/bin/myapp
 - [nicklaskey/qca-wifi-host](https://github.com/nicklaskey/qca-wifi-host) 提供 QSDK 12.2 基础
 - [everything411/qsdk](https://github.com/everything411/qsdk) 提供的 32 位底层补丁
 - [ImmortalWrt](https://github.com/immortalwrt/immortalwrt) 团队提供的基础 base
-- 小米/高通原厂固件工程师
 
 ---
 
