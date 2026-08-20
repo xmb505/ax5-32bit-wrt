@@ -887,7 +887,10 @@ dtb-$(CONFIG_ARCH_QCOM) += \
 	ipq6018-cp01-c5.dtb \
 	ipq6018-db-cp01.dtb \
 	ipq6018-cp02-c1.dtb \
-	ipq6018-cp03-c1.dtb \
+	ipq6018-cp03-c1.dtb
+
+ifeq (0,1)
+tmp-dtb-y += \
 	ipq8074-hk01.dtb \
 	ipq8074-hk01.internal.dtb \
 	ipq8074-hk01.c2.dtb \
@@ -943,7 +946,10 @@ dtb-$(CONFIG_ARCH_QCOM) += \
 	ipq9574-db-al01-c3.dtb \
 	ipq9574-db-al02-c1.dtb \
 	ipq9574-db-al02-c2.dtb \
-	ipq9574-db-al02-c3.dtb \
+	ipq9574-db-al02-c3.dtb
+endif
+
+dtb-$(CONFIG_ARCH_QCOM) += \
 	qcom-msm8660-surf.dtb \
 	qcom-msm8960-cdp.dtb \
 	qcom-msm8974-fairphone-fp2.dtb \
