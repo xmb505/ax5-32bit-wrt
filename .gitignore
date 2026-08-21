@@ -7,3 +7,6 @@ src/
 *.swp
 *~
 *.tmp
+
+# v16.0 was a superseded intermediate build; only v17.0 is released
+release/ax5-32bit-v16.0-*

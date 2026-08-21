@@ -1,4 +1,5 @@
-AX5-32Bit v15.0 release (active)
+AX5-32Bit v17.0 release (active)
+v15.0 (superseded, kept below for reference)
 ======================
 
 **⚠️ 这是手工拼出来的镜像,不是 OpenWrt `make` 编译产物。**
@@ -52,6 +53,10 @@ Files in this directory:
 
 SHA256:
 
+  ax5-32bit-v17.0-release.ubi:     0885bc9dfea0886ae0b8431febcee33e0252a81cea2139acdc7fba28a40522bf
+  ax5-32bit-v17.0-kernel-fit.itb:  764cff00c76692b2e8627cd881bcf3da183b4146a387571014176971cd21e0f2
+  ax5-32bit-v17.0-rootfs.squashfs: 74cf5204e518fb9a17bdafef3b7f2591e6f01a90f2af97570c9a1b2cf220f2c0
+
   ax5-32bit-v15.0-release.ubi:     353d0bea75b4b6ac930d419cd3b5e0f05e23074873fae174eb95d7477628fa1a
   ax5-32bit-v15.0-kernel-fit.itb:  1510b6d65088a88ca60f04e8cf0e22c350ddfbbc1a32c0471749c2c9257891c0
   ax5-32bit-v15.0-rootfs.squashfs: 31b9ff36e1a6346e1abe09d88aaa26e48c5dd60428f60502da2115a5a71b3ec5
@@ -64,7 +69,7 @@ SHA256:
 
 ---
 
-WiFi (NWRT factory stack, 不在 v15.0 改动范围内):
+WiFi (NWRT factory stack; v17 起 2.4G 冷启动即可搜索连接):
 
   5G:    Nwrt_5G,  chan 149, 802.11axa, WPA2-PSK, password 12345678
   2.4G:  Nwrt_2.4G, chan 13,  802.11axg, WPA2-PSK, password 12345678
