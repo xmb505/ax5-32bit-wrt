@@ -71,29 +71,45 @@ qoder 实际做的更多——一口气把整个 userland 拉到了主线 25.12:
 
 ## 3. 根因分析(踩坑清单)
 
-### 3.1 ❌ 把 "Starting kernel ..." 当 kernel hang — **假死误判**
+### 3.0 ⚠️ 必须先承认的事实：**v14.0/v14.2 从未被完整 NAND 烧写 + 冷启验证过**
+
+在我写完初版文档后,user 立即指出: **"最后一个可以正常跑的版本是 v13"**。
+
+重新核对 qoder 的全部对话(qoder JSONL L0–L705),证据链如下:
+
+| 版本 | 是否完整 NAND 烧写 | 是否冷启验证 | 唯一证据 |
+|---|---|---|---|
+| **v13.9** | ✅ | ✅ | commit `0910f95e0`,release tag `v13.9`,WiFi 实测 |
+| **v14.0** | ❌ **从未烧** | ❌ | qoder L670 "全链路验证通过" = 在 v13.9 上做 live overlay(`cp -r` 解 ipk 到运行中的 sys1),**不是从 NAND 冷启** |
+| **v14.1** | ❌ | ❌ | qoder L1269 显式声明 "v14.1 成型... v14.1 不入库" |
+| **v14.2** | ⚠️ ubiformat 烧了 | ❌ 不完整 | qoder L3448 "刷写完成" + L3454 "host key 变了 = 系统刷成功了"。但 dropbear/uhttpd post-boot 全炸,**没有完整路径验证** |
+
+**所以**:我初版文档第 3.1 节写的 "v14.0 跑得动,v14.2 必然也跑得动" 是**循环论证**——v14.0 本身就**没经过 NAND 烧写验证**。真实情况是:
+
+- **v13.9 是唯一经过完整 NAND 烧写 + 冷启验证的版本**
+- v14.0/v14.1/v14.2 **kernel FIT 与 v13.9 byte-identical**(SHA256 `190de0d8...`),理论上冷启能起,但**没有实机证据**
+- 04:39 user 看到 "Starting kernel ..." 后 panic,这个 panic 可能是**误判**(v14.2 还在 boot 过程中)也可能是**真 hang**(后续 qoder 又有 `wifi up` / `fw_setenv` / `reboot` 操作)——**没证据区分**。最稳妥的做法是**拿 v14.2 rootfs 用 v13.9 内核**,反正它们 SHA256 一样。
+
+### 3.1 ❌ 把 "Starting kernel ..." 当 kernel hang — **假死误判(可能是)**
 
 **症状**:v14.2 烧完后 TTL 输出停在 `Starting kernel ...`,看起来像 kernel 死锁。
 
-**真相**:**kernel FIT 是 byte-identical**(SHA256 `190de0d8...`),v14.0 跑得动,v14.2 必然也跑得动。我验证过:
+**部分真相**:**kernel FIT 是 byte-identical**(SHA256 `190de0d8...`)。但这只意味着 **kernel 本身**没换,**不能保证整 UBI 能从 NAND 冷启**——v14.0/v14.2 都没经过这一步验证。**我之前写的 "v14.0 跑得动" 是基于"live overlay 验证"的错误推导。**
 
-```
-$ sha256sum ax5-32bit-v14.0-kernel-fit.itb ax5-32bit-v14.2-kernel-fit.itb
-190de0d8ce00db5f49c2e422771b562c28603a1026a9c802da5859f1cd7be043  ax5-32bit-v14.0-kernel-fit.itb
-190de0d8ce00db5f49c2e422771b562c28603a1026a9c802da5859f1cd7be043  ax5-32bit-v14.2-kernel-fit.itb
-```
-
-UBI PEB 1(layout volume)byte-identical,PEB 0 只有 image_seq 随机数不同。**v14.2 的 kernel 卷 PEB 数据与 v14.0 一模一样**。
-
-qoder 在 L3454(04:21)的转录里其实**自己发现了这个事实**:
+qoder 在 L3454(04:21)的转录里其实**自己发现了部分事实**:
 > host key 又变了(正是 v14.2 镜像里预置的新 key——系统刷成功了)!清指纹重连。
 
-也就是 v14.2 **真的 boot 起来了**,SSH 也握手成功。但 user 04:39 上 TTL 时看到的 "Starting kernel ..." 是 **U-Boot 阶段的串口输出**,不是 kernel panic——只是 **kernel cmdline 没有 `console=` 参数,内核 printk 走的不是 UART**(默认走 tty,ttyMSM0 没 enable earlyprintk)。这是 NWRT kernel 的**默认行为**,v14.0 也一样(我们当时能 SSH 进去是因为 sys1 的运行 cmdline 有 console=,qoder 没改 cmdline,所以表现一致)。
+也就是 v14.2 **boot 至少起来了**,dropbear SSH 握手成功。但**完整的 boot 验证**(LuCI 起、WiFi 起、init.d 全 OK)在 qoder 的 L3476-L3485 中是**失败的**(dropbear 空密码被拒、uhttpd 没起)。
+
+后续 user 04:39 上 TTL 时看到的 "Starting kernel ..." 是 **U-Boot 阶段的串口输出**,不是 kernel panic——只是 **kernel cmdline 没有 `console=` 参数,内核 printk 走的不是 UART**(默认走 tty,ttyMSM0 没 enable earlyprintk)。这是 NWRT kernel 的**默认行为**,v13.9 也一样(我们当时能 SSH 进去是因为 sys1 的运行 cmdline 有 console=)。
+
+但**不能排除** kernel 在更后面 init.d 阶段真的炸了——v14.2 的 squashfs 漏了 3 个补丁(dropbear host key、dropbear 空密码、uhttpd-mod-ucode),任何一个 init 失败都可能让系统卡在某个服务上。
 
 **踩坑**:**别只看 "Starting kernel ..." 就判断 kernel 死了**。判定标准是:
-- ❌ TTL 上只有 "Starting kernel ..." → **不能说明 kernel 死了**
+- ❌ TTL 上只有 "Starting kernel ..." → **不能说明 kernel 死了**(可能是 NWRT 默认 console 行为)
 - ✅ TTL 上出现 Linux banner(`Linux version 5.4.213`)→ 才算 kernel 真的起来
 - ✅ `ping 192.168.1.1` 通 / `ssh root@192.168.1.1` 通 → 系统活着
+- ⚠️ 但 SSH 通 ≠ 全功能——可能是 dropbear 单独起,其他服务都挂
 
 ### 3.2 ❌ dropbear 2026.94 默认拒绝空密码
 

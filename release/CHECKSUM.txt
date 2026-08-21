@@ -1,4 +1,4 @@
-AX5-32Bit v14.3 release
+AX5-32Bit v15.0 release (active)
 ======================
 
 **⚠️ 这是手工拼出来的镜像,不是 OpenWrt `make` 编译产物。**
@@ -9,13 +9,15 @@ AX5-32Bit v14.3 release
 
   - dropbear v2026.94 + baked RSA-2048 host key (首启 SSH 不会 reset)
   - LuCI git-26.232 (2026 mainline, 模块化架构 + JS 视图)
-  - libustream-ssl + libmbedtls 2.16.12 (让 uhttpd 走 TLS via mbedtls, 不再裸 HTTP)
+  - libustream-ssl + libmbedtls 2.16.12 (让 uhttpd 走 TLS via mbedtls)
   - ECDSA P-256 server cert (CN=AX5-<last 6 MAC>, SAN: 192.168.1.1, openwrt.lan, xiaomi.router, 127.0.0.1, 825天)
-  - /etc/config/system: timezone Asia/Shanghai + 5 个 NTP server
+  - uhttpd HTTP 监听 **:80** (不是 :81), HTTPS :443, HTTP→HTTPS 307 自动 redirect
+  - 时区 **CST-8** + zonename `Asia/Shanghai` (= 北京时间, UTC+8)
+  - sysntpd 默认 enabled, 5 个 NTP server
     (0.pool/1.pool/cn.pool/ntp.aliyun/time1.cloud.tencent)
-  - sysntpd 默认 enabled (busybox ntpd)
   - root 密码 'password ' (SHA-512 hash 进 /etc/shadow)
-  - 内核 FIT 与 v13.9/v14.0/v14.2 byte-identical (Secure Boot 签名, NWRT 5.4.213)
+  - **不装 haku_wrt** (用户明确要求)
+  - 内核 FIT 与 v13.9 byte-identical (Secure Boot 签名, NWRT 5.4.213)
 
 详细拼装步骤、坑、修法都在 ../doc/ 里:
 
@@ -24,6 +26,7 @@ AX5-32Bit v14.3 release
   - ../doc/WIFI_IMPLEMENTATION.md - WiFi 配置 + debug
   - ../doc/INCIDENT_2026-08-20.md - 调试事故复盘
   - ../doc/INCIDENT_2026-08-21_QODER_V142.md - qoder v14.2 接力复盘
+  - ../doc/INCIDENT_2026-08-21_V15.md - v15.0 端口变更 + 时区调整记录 (待写)
 
 要重新做一版不一样的,看 CUSTOMIZE.md (快速自定义) 或
 NWRT_FACTORY_REFERENCE.md §6 (深度修补清单)。
@@ -32,32 +35,43 @@ NWRT_FACTORY_REFERENCE.md §6 (深度修补清单)。
 
 Files in this directory:
 
-  ax5-32bit-v14.3-release.ubi      24.2MB   最终 UBI 镜像 (kernel + rootfs)
-  ax5-32bit-v14.3-kernel-fit.itb   3.9MB   单独的 kernel FIT image
-  ax5-32bit-v14.3-rootfs.squashfs  18.4MB  rootfs (squashfs-xz)
-  .config                          281KB   OpenWrt build config (参考,不能直接 make 出镜像)
+  ax5-32bit-v15.0-release.ubi      24.2MB   🌟 最终 UBI 镜像 (推荐刷这个)
+  ax5-32bit-v15.0-kernel-fit.itb   3.9MB    单独的 kernel FIT image
+  ax5-32bit-v15.0-rootfs.squashfs  18.4MB   rootfs (squashfs-xz)
+
+  ax5-32bit-v14.3-release.ubi      24.2MB   备份 (跟 v15.0 几乎一样, 只是 uhttpd 还是 :81)
+  ax5-32bit-v14.3-kernel-fit.itb   3.9MB
+  ax5-32bit-v14.3-rootfs.squashfs  18.4MB
+
+  .config                          281KB    OpenWrt build config (参考,不能直接 make 出镜像)
   build.sh                         SSH 烧写脚本 (正常运行流程, 保留 sys1 fallback)
   flash-via-tftp.sh                串口/TFTP 救援脚本 (砖了用)
   customize.sh + customize/        一键自定义 rootfs 工具 (见 CUSTOMIZE.md)
-  ubinize-v143.cfg                 UBI 卷配置
+  ubinize-v150.cfg                 v15.0 UBI 卷配置
+  ubinize-v143.cfg                 v14.3 UBI 卷配置
 
 SHA256:
 
+  ax5-32bit-v15.0-release.ubi:     353d0bea75b4b6ac930d419cd3b5e0f05e23074873fae174eb95d7477628fa1a
+  ax5-32bit-v15.0-kernel-fit.itb:  1510b6d65088a88ca60f04e8cf0e22c350ddfbbc1a32c0471749c2c9257891c0
+  ax5-32bit-v15.0-rootfs.squashfs: 31b9ff36e1a6346e1abe09d88aaa26e48c5dd60428f60502da2115a5a71b3ec5
+
   ax5-32bit-v14.3-release.ubi:     c3e457d35b8ebf58d78cf0a1a3992f815cbfc61bded854ae13c95370d0d4fa79
-  ax5-32bit-v14.3-kernel-fit.itb:  190de0d8ce00db5f49c2e422771b562c28603a1026a9c802da5859f1cd7be043
+  ax5-32bit-v14.3-kernel-fit.itb:  1510b6d65088a88ca60f04e8cf0e22c350ddfbbc1a32c0471749c2c9257891c0
   ax5-32bit-v14.3-rootfs.squashfs: 8700e4b47a39608f6f9910893467fb6b4a0ebc255df98ff5f7aac6058bd82ac8
+
   .config:                         84efc08a8eacd5c7969cc6a252949fb5c91c824e172562440d6d823028acf017
 
 ---
 
-WiFi (NWRT factory stack, 不在 v14.3 改动范围内):
+WiFi (NWRT factory stack, 不在 v15.0 改动范围内):
 
   5G:    Nwrt_5G,  chan 149, 802.11axa, WPA2-PSK, password 12345678
   2.4G:  Nwrt_2.4G, chan 13,  802.11axg, WPA2-PSK, password 12345678
 
 ---
 
-## 上手步骤
+## 上手步骤 (v15.0)
 
 1. **正常烧写 (sys1 → sys2 + 切 sys2):**
    ```
@@ -68,27 +82,38 @@ WiFi (NWRT factory stack, 不在 v14.3 改动范围内):
    #   root 密码: password
    ```
 
-2. **uhttpd/HTTPS 验证:**
+2. **uhttpd 验证:**
    ```
    # HTTP 应自动 307 重定向到 HTTPS
-   curl -I http://192.168.1.1:81/
+   curl -I http://192.168.1.1/
 
-   # HTTPS 应工作 (self-signed, -k 跳过 cert 校验)
-   curl -kI https://192.168.1.1:443/
+   # LuCI 直接 HTTPS (self-signed, -k 跳过 cert 校验)
+   curl -kI https://192.168.1.1/cgi-bin/luci
 
    # Cert 信息 (ECDSA P-256 + SAN + 825d)
    echo | openssl s_client -connect 192.168.1.1:443 -servername openwrt.lan 2>/dev/null | \
        openssl x509 -noout -subject -dates -ext subjectAltName,extendedKeyUsage
    ```
 
-3. **NTP 验证:**
+3. **NTP / 时区 验证:**
    ```
-   date                          # 应显示 CST-8 时区
+   date                          # 应显示 CST-8 时区 (北京时间)
    ps | grep ntpd                # busybox ntpd 应在跑
    /etc/init.d/sysntpd status    # enabled
+   uci show system.ntp            # 5 个 server
+   uci show system | grep -E "timezone|zonename"
    ```
 
-4. **紧急 TFTP 救援:**
+4. **紧急 TFTP 救援 (砖了用):**
    ```
    # 串口接上, U-Boot 提示符下跑 release/flash-via-tftp.sh 输出的命令
+   ```
+
+5. **回退到 sys1 (v13.9):**
+   ```
+   ssh root@192.168.1.1
+   fw_setenv flag_boot_rootfs 0
+   fw_setenv flag_try_sys1_failed 0
+   fw_setenv flag_try_sys2_failed 1
+   reboot
    ```

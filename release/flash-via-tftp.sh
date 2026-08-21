@@ -1,5 +1,5 @@
 #!/bin/sh
-# AX5-32Bit v14.3 release - TFTP recovery / direct serial flash
+# AX5-32Bit v15.0 release - TFTP recovery / direct serial flash
 #
 # Use this when router is bricked (no SSH, no boot). Requires serial console
 # (UART) + access to the U-Boot prompt.
@@ -10,13 +10,13 @@
 # 3. At U-Boot prompt, set up TFTP server with the .ubi file
 # 4. Run commands below (substitute your tftp server IP)
 #
-# v14.3 UBI size: 24.2 MB. Partition mtd19 size: 36 MB (0x2400000).
+# v15.0 UBI size: 24.2 MB. Partition mtd19 size: 36 MB (0x2400000).
 # Erase full partition first, then write the UBI image to rootfs_1.
 
 set -e
 
 SERVER_IP="192.168.31.100"   # Change to your TFTP server
-UBI_NAME="ax5-32bit-v14.3-release.ubi"
+UBI_NAME="ax5-32bit-v15.0-release.ubi"
 WIDTH=0x2400000              # AX5 rootfs_1 partition size (36MB)
 
 echo "=== At U-Boot prompt, run: ==="
