@@ -1,159 +1,94 @@
-AX5-32Bit v14.0 release
+AX5-32Bit v14.3 release
 ======================
 
 **⚠️ 这是手工拼出来的镜像,不是 OpenWrt `make` 编译产物。**
 
 不要指望 clone + `cd src && make` 能产出这个 `.ubi`。
-这是从 NWRT QSDK 12.2 factory 镜像 + 手工剥 kernel + 手工裁剪
-+ 重打包 rootfs 拼出来的。详见下文。
+这是从 v13.9 (NWRT QSDK 12.2 factory rootfs + 4KB-剥离 kernel FIT) 为基线,
+手工叠加以下现代化组件后拼出来的:
 
-**v13.9 已归档到 GitHub Releases 页面 (tag: v13.9),分支内只保留最新版。**
+  - dropbear v2026.94 + baked RSA-2048 host key (首启 SSH 不会 reset)
+  - LuCI git-26.232 (2026 mainline, 模块化架构 + JS 视图)
+  - libustream-ssl + libmbedtls 2.16.12 (让 uhttpd 走 TLS via mbedtls, 不再裸 HTTP)
+  - ECDSA P-256 server cert (CN=AX5-<last 6 MAC>, SAN: 192.168.1.1, openwrt.lan, xiaomi.router, 127.0.0.1, 825天)
+  - /etc/config/system: timezone Asia/Shanghai + 5 个 NTP server
+    (0.pool/1.pool/cn.pool/ntp.aliyun/time1.cloud.tencent)
+  - sysntpd 默认 enabled (busybox ntpd)
+  - root 密码 'password ' (SHA-512 hash 进 /etc/shadow)
+  - 内核 FIT 与 v13.9/v14.0/v14.2 byte-identical (Secure Boot 签名, NWRT 5.4.213)
 
----
+详细拼装步骤、坑、修法都在 ../doc/ 里:
 
-v14.0 变更 (2026-08-21, 已在实机验证):
+  - ../doc/NWRT_FACTORY_REFERENCE.md - 整个手工拼装流程
+  - ../doc/NWRT_WIFI_BOOT_FLOW.md - NWRT boot 序列分析
+  - ../doc/WIFI_IMPLEMENTATION.md - WiFi 配置 + debug
+  - ../doc/INCIDENT_2026-08-20.md - 调试事故复盘
+  - ../doc/INCIDENT_2026-08-21_QODER_V142.md - qoder v14.2 接力复盘
 
-  - LuCI 从 git-24.102.38532 升级到 git-26.232.01033 (2026 主线)
-    * 模块化新架构: luci-mod-network / luci-mod-status / luci-mod-system /
-      luci-mod-admin-full + JS 视图 (39 个 view)
-    * 新增 rpcd-mod-luci / rpcd-mod-file / cgi-io / liblucihttp
-    * 中文翻译 (base/firewall/opkg) 齐全
-  - uhttpd 启用 /ubus 原生端点 (ubus_prefix), 新 JS 前端数据链路走通
-  - opkg 状态库同步更新, 可继续 opkg 管理
-
-实机验证记录 (192.168.1.1, 2026-08-21):
-  - 登录 (root 空密码) -> 302 + sysauth cookie ✅
-  - /cgi-bin/luci/admin/status/overview -> 200, 中文界面 ✅
-  - /ubus: system.board / luci.getFeatures / uci.get 全部返回数据 ✅
-  - 静态资源 (cascade.css / cbi.js / view JS) 全部 200 ✅
+要重新做一版不一样的,看 CUSTOMIZE.md (快速自定义) 或
+NWRT_FACTORY_REFERENCE.md §6 (深度修补清单)。
 
 ---
 
 Files in this directory:
 
-  ax5-32bit-v14.0-release.ubi     22MB    最终 UBI 镜像 (kernel + rootfs)
-  ax5-32bit-v14.0-kernel-fit.itb  3.9MB   单独的 kernel FIT image
-  ax5-32bit-v14.0-rootfs.squashfs 17.4MB  rootfs (squashfs-xz)
-  .config                        281KB   OpenWrt build config (参考,不能直接 make 出镜像)
-  build.sh                       SSH 烧写脚本 (正常运行流程)
-  flash-via-tftp.sh              串口/TFTP 救援脚本 (砖了用)
-  customize.sh + customize/      一键自定义 rootfs 工具 (见 CUSTOMIZE.md)
-  ubinize-v14.cfg                UBI 卷配置
-  CHECKSUM.txt                   本文件
+  ax5-32bit-v14.3-release.ubi      24.2MB   最终 UBI 镜像 (kernel + rootfs)
+  ax5-32bit-v14.3-kernel-fit.itb   3.9MB   单独的 kernel FIT image
+  ax5-32bit-v14.3-rootfs.squashfs  18.4MB  rootfs (squashfs-xz)
+  .config                          281KB   OpenWrt build config (参考,不能直接 make 出镜像)
+  build.sh                         SSH 烧写脚本 (正常运行流程, 保留 sys1 fallback)
+  flash-via-tftp.sh                串口/TFTP 救援脚本 (砖了用)
+  customize.sh + customize/        一键自定义 rootfs 工具 (见 CUSTOMIZE.md)
+  ubinize-v143.cfg                 UBI 卷配置
 
 SHA256:
 
-  ax5-32bit-v14.0-release.ubi:     f04f069491a829c93f57adc9f4fd65f54b927b8cba383e5a82e63756de69afc1
-  ax5-32bit-v14.0-kernel-fit.itb:  190de0d8ce00db5f49c2e422771b562c28603a1026a9c802da5859f1cd7be043
-  ax5-32bit-v14.0-rootfs.squashfs: b14da8ca7ca33e9f66679215aeee968a7b2b49369f71e686dbe2f87dad8ff4d4
+  ax5-32bit-v14.3-release.ubi:     c3e457d35b8ebf58d78cf0a1a3992f815cbfc61bded854ae13c95370d0d4fa79
+  ax5-32bit-v14.3-kernel-fit.itb:  190de0d8ce00db5f49c2e422771b562c28603a1026a9c802da5859f1cd7be043
+  ax5-32bit-v14.3-rootfs.squashfs: 8700e4b47a39608f6f9910893467fb6b4a0ebc255df98ff5f7aac6058bd82ac8
   .config:                         84efc08a8eacd5c7969cc6a252949fb5c91c824e172562440d6d823028acf017
 
 ---
 
-WiFi (verified Aug 21 2026, v13.9 实测; v14.0 未动 WiFi 组件):
+WiFi (NWRT factory stack, 不在 v14.3 改动范围内):
 
-  5G:    Nwrt_5G, chan 149, 802.11axa, WPA2-PSK, password 12345678
-  2.4G:  Nwrt_2.4G, chan 13, 802.11axg, WPA2-PSK, password 12345678
-
----
-
-## 这是怎么"拼"出来的 (不是 `make`)
-
-整个流程是手工的,核心步骤:
-
-### 1. Kernel - 从 NWRT factory UBI 剥出来
-
-```
-NWRT factory bin → 7z 解开 → img-*_vol-rootfs.ubifs (36MB)
-                  → img-*_vol-kernel (4MB)
-kernel 包含 4KB UBI metadata header 每 124KB 嵌入一次,直接读会错
-剥法:
-  - 扫 PEB 2-32 (跳过坏块)
-  - 剥每个 PEB 的前 4KB header
-  - 拼接干净的 124KB block
-  - 验证 FIT magic + SHA
-  → ax5-32bit-v14.0-kernel-fit.itb
-```
-
-### 2. Rootfs - 在 NWRT rootfs 基础上裁剪 + 重打包
-
-```
-NWRT 19.07 rootfs (OpenWrt base, ~30MB unstripped)
-  ↓
-裁剪:
-  - 删 kmod-qca-nss-ecm-* plugins (我们不用 SOHO 加速)
-  - 删 luci-theme-material (我们只用 bootstrap)
-  - 删 wifi_hw_mode 等 NWRT 工具 (我们用 NWRT 原厂的)
-  - 删未用 firmware blobs
-  - 压缩到 ~14MB
-
-加回 (NWRT 必须):
-  - /lib/wifi/qcawificfg80211.sh (246KB, 主 wifi up 路径)
-  - /lib/wifi/qcawifi.sh (148KB, ACFG fallback)
-  - /lib/wifi/hostapd.sh + wpa_supplicant.sh (85+18KB)
-  - /lib/wifi/.first_time_boot (空文件,触发 boot wifi up)
-  - /usr/sbin/{hostapd, wpa_supplicant, acfg_tool, wlanconfig, cfg80211tool*}
-  - /usr/sbin/{wifi_hw_mode, wifi_try, wifistats, wlanfw-upgrade.sh}
-  - /usr/lib/{libnettle.so.8.4, libhogweed.so.6.4} (实文件,不是空软链)
-  - /etc/config/qcacfg80211 (option enable 1)
-
-加 ini 配置 (NWRT FW 必须):
-  - /ini/global.ini (cfg80211_config=0)
-  - /ini/QCA6018.ini (board id)
-  - /ini/internal/global_i.ini (fast_boot_vap_mode=1)
-  - /ini/internal/QCA6018_i.ini (datapath config)
-  - 其他 11 个 _i.ini (不同 chip 的 fallback)
-
-加 init.d:
-  - qca-acfg (acfg_tool -e -s)
-  - qcawifi-config-cmd (boot wifi config 生成)
-  - qca-hostapd (空 global hostapd)
-  - qca-wpa-supplicant (空 global wpa_supplicant)
-  - wifi_fw_done + wifi_fw_mount
-
-v14.0 追加 (LuCI 现代化):
-  - 移除旧版 git-24.102 LuCI 文件
-  - 注入 23 个新 LuCI ipk (git-26.232, 从 QSDK 构建树 bin/packages 提取)
-  - /etc/config/uhttpd 启用 ubus_prefix /ubus
-  - 同步 /usr/lib/opkg/{status,info}
-
-Squashfs 打包:
-  mksquashfs rootfs/ rootfs.squashfs -comp xz -b 128K
-  → 17.4MB squashfs (NWRT 内核只支持 xz,不支持 zlib)
-```
-
-### 3. UBI 打包
-
-```
-ubinize-v14.cfg:
-  [kernel]
-  vol_name=kernel
-  vol_type=static
-  vol_id=0
-  size=4MB
-  image=ax5-32bit-v14.0-kernel-fit.itb
-
-  [rootfs]
-  vol_name=rootfs
-  vol_type=dynamic
-  vol_id=1
-  vol_flags=autoresize
-  image=ax5-32bit-v14.0-rootfs.squashfs
-
-ubinize -o out.ubi -m 2048 -p 128KiB -s 2048 ubinize-v14.cfg
-→ ax5-32bit-v14.0-release.ubi
-```
+  5G:    Nwrt_5G,  chan 149, 802.11axa, WPA2-PSK, password 12345678
+  2.4G:  Nwrt_2.4G, chan 13,  802.11axg, WPA2-PSK, password 12345678
 
 ---
 
-完整文档
+## 上手步骤
 
-详细每个步骤的命令、坑、修法都在 ../doc/ 里:
+1. **正常烧写 (sys1 → sys2 + 切 sys2):**
+   ```
+   cd release/
+   ./build.sh
+   # 烧完后等 60-90s 让 sys2 启动
+   ssh root@192.168.1.1
+   #   root 密码: password
+   ```
 
-- `../doc/NWRT_FACTORY_REFERENCE.md` - 整个手工拼装流程 + v14 修补清单
-- `../doc/NWRT_WIFI_BOOT_FLOW.md` - NWRT boot 序列分析
-- `../doc/WIFI_IMPLEMENTATION.md` - WiFi 配置 + debug
-- `../doc/INCIDENT_2026-08-20.md` - 调试时遇到的事故复盘
+2. **uhttpd/HTTPS 验证:**
+   ```
+   # HTTP 应自动 307 重定向到 HTTPS
+   curl -I http://192.168.1.1:81/
 
-要重新做一版不一样的,看 CUSTOMIZE.md (快速自定义) 或
-NWRT_FACTORY_REFERENCE.md §6 (深度修补清单)。
+   # HTTPS 应工作 (self-signed, -k 跳过 cert 校验)
+   curl -kI https://192.168.1.1:443/
+
+   # Cert 信息 (ECDSA P-256 + SAN + 825d)
+   echo | openssl s_client -connect 192.168.1.1:443 -servername openwrt.lan 2>/dev/null | \
+       openssl x509 -noout -subject -dates -ext subjectAltName,extendedKeyUsage
+   ```
+
+3. **NTP 验证:**
+   ```
+   date                          # 应显示 CST-8 时区
+   ps | grep ntpd                # busybox ntpd 应在跑
+   /etc/init.d/sysntpd status    # enabled
+   ```
+
+4. **紧急 TFTP 救援:**
+   ```
+   # 串口接上, U-Boot 提示符下跑 release/flash-via-tftp.sh 输出的命令
+   ```
