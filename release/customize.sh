@@ -6,18 +6,18 @@
 #      (directory layout = target path in rootfs, e.g.
 #       customize/usr/bin/myapp  ->  /usr/bin/myapp on the router)
 #   2. Run: ./customize.sh
-#   3. Flash the generated ax5-32bit-v13.9-release-custom.ubi
+#   3. Flash the generated ax5-32bit-v14.0-release-custom.ubi
 #
 # Dependencies (on your build PC): squashfs-tools, mtd-utils
 #   Debian/Ubuntu: sudo apt install squashfs-tools mtd-utils xz-utils
 #
 # Safe to re-run: original rootfs.squashfs is backed up once as
-# ax5-32bit-v13.9-rootfs.squashfs.orig and always used as the base.
+# ax5-32bit-v14.0-rootfs.squashfs.orig and always used as the base.
 
 set -e
 cd "$(dirname "$0")"
 
-ROOTFS="ax5-32bit-v13.9-rootfs.squashfs"
+ROOTFS="ax5-32bit-v14.0-rootfs.squashfs"
 OVERLAY="customize"
 WORKDIR="squashfs-root"
 
@@ -63,4 +63,4 @@ echo ""
 echo "=== DONE ==="
 echo "Flash it via SSH:  scp the .ubi to the router, then run ./build.sh on the router."
 echo "New checksums:"
-sha256sum "$ROOTFS" ax5-32bit-v13.9-release-custom.ubi
+sha256sum "$ROOTFS" ax5-32bit-v14.0-release-custom.ubi

@@ -1,4 +1,4 @@
-AX5-32Bit v13.9 release
+AX5-32Bit v14.0 release
 ======================
 
 **⚠️ 这是手工拼出来的镜像,不是 OpenWrt `make` 编译产物。**
@@ -7,27 +7,50 @@ AX5-32Bit v13.9 release
 这是从 NWRT QSDK 12.2 factory 镜像 + 手工剥 kernel + 手工裁剪
 + 重打包 rootfs 拼出来的。详见下文。
 
+**v13.9 已归档到 GitHub Releases 页面 (tag: v13.9),分支内只保留最新版。**
+
+---
+
+v14.0 变更 (2026-08-21, 已在实机验证):
+
+  - LuCI 从 git-24.102.38532 升级到 git-26.232.01033 (2026 主线)
+    * 模块化新架构: luci-mod-network / luci-mod-status / luci-mod-system /
+      luci-mod-admin-full + JS 视图 (39 个 view)
+    * 新增 rpcd-mod-luci / rpcd-mod-file / cgi-io / liblucihttp
+    * 中文翻译 (base/firewall/opkg) 齐全
+  - uhttpd 启用 /ubus 原生端点 (ubus_prefix), 新 JS 前端数据链路走通
+  - opkg 状态库同步更新, 可继续 opkg 管理
+
+实机验证记录 (192.168.1.1, 2026-08-21):
+  - 登录 (root 空密码) -> 302 + sysauth cookie ✅
+  - /cgi-bin/luci/admin/status/overview -> 200, 中文界面 ✅
+  - /ubus: system.board / luci.getFeatures / uci.get 全部返回数据 ✅
+  - 静态资源 (cascade.css / cbi.js / view JS) 全部 200 ✅
+
 ---
 
 Files in this directory:
 
-  ax5-32bit-v13.9-release.ubi     20MB    最终 UBI 镜像 (kernel + rootfs)
-  ax5-32bit-v13.9-kernel-fit.itb  3.9MB   单独的 kernel FIT image
+  ax5-32bit-v14.0-release.ubi     22MB    最终 UBI 镜像 (kernel + rootfs)
+  ax5-32bit-v14.0-kernel-fit.itb  3.9MB   单独的 kernel FIT image
+  ax5-32bit-v14.0-rootfs.squashfs 17.4MB  rootfs (squashfs-xz)
   .config                        281KB   OpenWrt build config (参考,不能直接 make 出镜像)
   build.sh                       SSH 烧写脚本 (正常运行流程)
   flash-via-tftp.sh              串口/TFTP 救援脚本 (砖了用)
+  customize.sh + customize/      一键自定义 rootfs 工具 (见 CUSTOMIZE.md)
+  ubinize-v14.cfg                UBI 卷配置
   CHECKSUM.txt                   本文件
 
 SHA256:
 
-  ax5-32bit-v13.9-release.ubi:    45501a97d7050477a68a2bd05efddcea6d9ee576a4aec29ec1e499fcb03a1bc3
-  ax5-32bit-v13.9-kernel-fit.itb: 190de0d8ce00db5f49c2e422771b562c28603a1026a9c802da5859f1cd7be043
-  ax5-32bit-v13.9-rootfs.squashfs: da7440d800900e6ed33cb86389e7b289cd4233d605080eda9dc953ce16c54b07
-  .config:                       84efc08a8eacd5c7969cc6a252949fb5c91c824e172562440d6d823028acf017
+  ax5-32bit-v14.0-release.ubi:     f04f069491a829c93f57adc9f4fd65f54b927b8cba383e5a82e63756de69afc1
+  ax5-32bit-v14.0-kernel-fit.itb:  190de0d8ce00db5f49c2e422771b562c28603a1026a9c802da5859f1cd7be043
+  ax5-32bit-v14.0-rootfs.squashfs: b14da8ca7ca33e9f66679215aeee968a7b2b49369f71e686dbe2f87dad8ff4d4
+  .config:                         84efc08a8eacd5c7969cc6a252949fb5c91c824e172562440d6d823028acf017
 
 ---
 
-WiFi (verified Aug 21 2026):
+WiFi (verified Aug 21 2026, v13.9 实测; v14.0 未动 WiFi 组件):
 
   5G:    Nwrt_5G, chan 149, 802.11axa, WPA2-PSK, password 12345678
   2.4G:  Nwrt_2.4G, chan 13, 802.11axg, WPA2-PSK, password 12345678
@@ -49,7 +72,7 @@ kernel 包含 4KB UBI metadata header 每 124KB 嵌入一次,直接读会错
   - 剥每个 PEB 的前 4KB header
   - 拼接干净的 124KB block
   - 验证 FIT magic + SHA
-  → ax5-32bit-v13.9-kernel-fit.itb
+  → ax5-32bit-v14.0-kernel-fit.itb
 ```
 
 ### 2. Rootfs - 在 NWRT rootfs 基础上裁剪 + 重打包
@@ -88,38 +111,42 @@ NWRT 19.07 rootfs (OpenWrt base, ~30MB unstripped)
   - qca-wpa-supplicant (空 global wpa_supplicant)
   - wifi_fw_done + wifi_fw_mount
 
+v14.0 追加 (LuCI 现代化):
+  - 移除旧版 git-24.102 LuCI 文件
+  - 注入 23 个新 LuCI ipk (git-26.232, 从 QSDK 构建树 bin/packages 提取)
+  - /etc/config/uhttpd 启用 ubus_prefix /ubus
+  - 同步 /usr/lib/opkg/{status,info}
+
 Squashfs 打包:
   mksquashfs rootfs/ rootfs.squashfs -comp xz -b 128K
-  → 14MB squashfs (NWRT 内核只支持 xz,不支持 zlib)
+  → 17.4MB squashfs (NWRT 内核只支持 xz,不支持 zlib)
 ```
 
 ### 3. UBI 打包
 
 ```
-ubinize.cfg:
+ubinize-v14.cfg:
   [kernel]
   vol_name=kernel
   vol_type=static
   vol_id=0
-  size=3936256  (3.75MB, AX5 mtd22 大小)
-  image=kernel_itb
+  size=4MB
+  image=ax5-32bit-v14.0-kernel-fit.itb
 
   [rootfs]
   vol_name=rootfs
   vol_type=dynamic
   vol_id=1
-  image=rootfs.squashfs
+  vol_flags=autoresize
+  image=ax5-32bit-v14.0-rootfs.squashfs
 
-ubiattach /dev/ubi_ctrl -m 6 -d 0
-ubimkvol /dev/ubi0 -N kernel -s 3936256
-ubimkvol /dev/ubi0 -N rootfs --size=available
-ubigen -d 0 -p 2 -o /tmp/factory.ubi -s 2048 -m 2048 kernel rootfs
-→ ax5-32bit-v13.9-release.ubi
+ubinize -o out.ubi -m 2048 -p 128KiB -s 2048 ubinize-v14.cfg
+→ ax5-32bit-v14.0-release.ubi
 ```
 
 ---
 
-## 完整文档
+完整文档
 
 详细每个步骤的命令、坑、修法都在 ../doc/ 里:
 
@@ -128,4 +155,5 @@ ubigen -d 0 -p 2 -o /tmp/factory.ubi -s 2048 -m 2048 kernel rootfs
 - `../doc/WIFI_IMPLEMENTATION.md` - WiFi 配置 + debug
 - `../doc/INCIDENT_2026-08-20.md` - 调试时遇到的事故复盘
 
-要重新做一版不一样的,看 NWRT_FACTORY_REFERENCE.md §6 (v14 rootfs 修补清单)。
+要重新做一版不一样的,看 CUSTOMIZE.md (快速自定义) 或
+NWRT_FACTORY_REFERENCE.md §6 (深度修补清单)。

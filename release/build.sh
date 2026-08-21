@@ -1,8 +1,8 @@
 #!/bin/sh
-# AX5-32Bit v13.9 release - flash to mtd19 (rootfs_1)
+# AX5-32Bit v14.0 release - flash to mtd19 (rootfs_1)
 #
 # Use this when sys1 is active (flag_boot_rootfs=0) and you want to flash
-# the v13.9 release to sys2 (mtd19 / rootfs_1), then switch boot flag.
+# the v14.0 release to sys2 (mtd19 / rootfs_1), then switch boot flag.
 #
 # Recovery: if boot fails after flash, switch back to sys1:
 #   fw_setenv flag_boot_rootfs 0
@@ -12,7 +12,7 @@
 
 set -e
 
-UBI="ax5-32bit-v13.9-release.ubi"
+UBI="ax5-32bit-v14.0-release.ubi"
 
 if [ ! -f "$UBI" ]; then
     echo "ERROR: $UBI not found"

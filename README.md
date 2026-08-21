@@ -43,11 +43,11 @@
 │   └── WIFI_IMPLEMENTATION.md  # 🛠️ 开发者速查手册 (文件、命令、调试技巧)
 │
 ├── release/                    # 📦 真正有用的烧写包与脚本 (38MB)
-│   ├── ax5-32bit-v13.9-release.ubi     # 🌟 20MB 最终 UBI 刷写固件 (包含内核与文件系统)
-│   ├── ax5-32bit-v13.9-rootfs.squashfs # 🛠️ 14.5MB 拼装好的满血 rootfs (squashfs-xz)
-│   ├── ax5-32bit-v13.9-kernel-fit.itb  # 3.9MB standalone 内核 FIT image (供备用)
+│   ├── ax5-32bit-v14.0-release.ubi     # 🌟 22MB 最终 UBI 刷写固件 (包含内核与文件系统)
+│   ├── ax5-32bit-v14.0-rootfs.squashfs # 🛠️ 17.4MB 拼装好的满血 rootfs (squashfs-xz)
+│   ├── ax5-32bit-v14.0-kernel-fit.itb  # 3.9MB standalone 内核 FIT image (供备用)
 │   ├── .config                         # 281KB 编译配置参考
-│   ├── ubinize.cfg                     # UBI 卷配置文件
+│   ├── ubinize-v14.cfg                     # UBI 卷配置文件
 │   ├── customize.sh                    # 🎨 一键"塞自定义文件 + 重打包 UBI"脚本
 │   ├── customize/                      # 📂 你的自定义文件按目标路径放这里
 │   ├── CUSTOMIZE.md                    # 📖 自定义 rootfs 完整指南
@@ -66,6 +66,7 @@
 | 组件 | 状态 | 说明 |
 |---|---|---|
 | **Kernel** | NWRT 5.4.213 (32-bit ARM) ✅ | 高精度剥离 4KB 垃圾头，绕过小米 U-Boot 校验 |
+| **LuCI** | git-26.232 (2026 主线版) ✅ | v14.0 升级：模块化架构 + JS 视图 + 中文，实机登录/数据链路验证通过 |
 | **WiFi 5G** | `Nwrt_5G`, chan 149, 802.11axa ✅ | Master 模式，WPA2-PSK 正常，**不设 WPA2-PSK 连不上** |
 | **WiFi 2.4G** | `Nwrt_2.4G`, chan 13, 802.11axg ✅ | Master 模式，WPA2-PSK 正常 |
 | **密码** | `12345678` ✅ | 默认配置已置于 squashfs 只读层 |
@@ -85,12 +86,12 @@ git clone -b AX5-NwrtKernel https://github.com/xmb505/ax5-32bit-wrt.git
 cd ax5-32bit-wrt/release
 
 # 2. 把烧写包推送到路由器 /tmp/ 目录下
-scp -O -o HostKeyAlgorithms=+ssh-rsa ax5-32bit-v13.9-release.ubi root@192.168.1.1:/tmp/
+scp -O -o HostKeyAlgorithms=+ssh-rsa ax5-32bit-v14.0-release.ubi root@192.168.1.1:/tmp/
 
 # 3. 登录路由器, 运行 build.sh (或手动运行以下三行命令)
 ssh -o HostKeyAlgorithms=+ssh-rsa root@192.168.1.1
 # [在路由器上运行]
-ubiformat /dev/mtd19 -f /tmp/ax5-32bit-v13.9-release.ubi
+ubiformat /dev/mtd19 -f /tmp/ax5-32bit-v14.0-release.ubi
 fw_setenv flag_boot_rootfs 1
 fw_setenv flag_try_sys1_failed 1
 fw_setenv flag_try_sys2_failed 0
@@ -109,7 +110,7 @@ reboot
 # 在 U-Boot 终端输入以下命令 (开发机 TFTP 设为 192.168.31.100):
 setenv serverip 192.168.31.100
 setenv ipaddr 192.168.31.1
-tftpboot 0x44000000 ax5-32bit-v13.9-release.ubi
+tftpboot 0x44000000 ax5-32bit-v14.0-release.ubi
 nand erase 0x1180000 0x2400000
 nand write 0x44000000 0x1180000 ${filesize}
 reset
@@ -147,7 +148,7 @@ cp myapp customize/usr/bin/ && chmod +x customize/usr/bin/myapp
 # 2. 一键重打包 (自动 unsquashfs -> 注入 -> mksquashfs xz -> ubinize)
 ./customize.sh
 
-# 3. 刷 ax5-32bit-v13.9-release-custom.ubi (方法同第 4 节)
+# 3. 刷 ax5-32bit-v14.0-release-custom.ubi (方法同第 4 节)
 ```
 
 整个流程只要 **30 秒**。原理、坑点（必须 xz 压缩、卷名必须叫 `rootfs`、别动内核卷等）详见 **[`release/CUSTOMIZE.md`](release/CUSTOMIZE.md)**。

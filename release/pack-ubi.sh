@@ -1,27 +1,27 @@
 #!/bin/sh
 # AX5-32Bit - Stitch kernel + rootfs into .ubi image
 #
-# Use this when you have modified 'ax5-32bit-v13.9-rootfs.squashfs' (e.g. via unsquashfs/mksquashfs)
+# Use this when you have modified 'ax5-32bit-v14.0-rootfs.squashfs' (e.g. via unsquashfs/mksquashfs)
 # and want to rebuild the final '.ubi' flash image.
 #
 # Dependencies: 'ubinize' from mtd-utils (sudo apt install mtd-utils)
 
 set -e
 
-CFG="ubinize.cfg"
-OUT="ax5-32bit-v13.9-release-custom.ubi"
+CFG="ubinize-v14.cfg"
+OUT="ax5-32bit-v14.0-release-custom.ubi"
 
 if [ ! -f "$CFG" ]; then
     echo "ERROR: $CFG not found"
     exit 1
 fi
 
-if [ ! -f "ax5-32bit-v13.9-kernel-fit.itb" ]; then
+if [ ! -f "ax5-32bit-v14.0-kernel-fit.itb" ]; then
     echo "ERROR: Kernel FIT not found"
     exit 1
 fi
 
-if [ ! -f "ax5-32bit-v13.9-rootfs.squashfs" ]; then
+if [ ! -f "ax5-32bit-v14.0-rootfs.squashfs" ]; then
     echo "ERROR: Rootfs SquashFS not found"
     exit 1
 fi

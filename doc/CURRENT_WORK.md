@@ -1,6 +1,6 @@
-# ax5-32bit 编译进度交接 - v13.9 (✅ 已发布, 含 HAKU WRT 面板)
+# ax5-32bit 编译进度交接 - v14.0 (✅ 已发布, LuCI 2026 主线版)
 
-> **当前最终状态 (2026-08-21)**: v13.9 已发布到本仓库 `release/` 目录并推送至
+> **当前最终状态 (2026-08-21)**: v14.0 已发布 (LuCI 升级到 git-26.232, 实机验证登录与 ubus 数据链路通过; v13.9 归档至 GitHub Releases tag v13.9)。推送至
 > GitHub `xmb505/ax5-32bit-wrt` 分支 `AX5-NwrtKernel`。
 > rootfs 已集成 haku_wrt 控制面板。WiFi / NSS / DHCP / LuCI 全部实测通过。
 >
