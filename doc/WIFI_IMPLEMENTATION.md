@@ -8,6 +8,39 @@
 
 ---
 
+## ⚠️ 0. 最高优先级警告：不要在 LuCI 网页里动 WiFi (v14.0 实测事故)
+
+**2026-08-21 实测**：v14.0 的新版 LuCI (git-26.232) 网络页面会提示
+"wifi 配置迁移"，执行后它会重写 `/etc/config/wireless`，造成：
+
+1. **`hwmode` 被降级**：`11axa/11axg` (Wi-Fi 6) 被改写成 `11ac/11ng`，满血 AX 直接残废
+2. **触发 WCSS SSR 重启**：驱动子系统复位，WiFi 瞬断（幸运的话会自动恢复）
+3. 运气差时 VAP 起不来，需要手动重载模块
+
+新版 LuCI 的 wireless.js 不完全理解 QSDK 的 `qcawificfg80211` 类型语义，
+**它的无线页面只读参考可以，应用/迁移会破坏配置**。
+
+**改 WiFi 一律用 uci 命令**（本文档 §4），或者改完配置后：
+
+```bash
+rm -f /var/run/wifilock
+/sbin/wifi down && sleep 2 && /sbin/wifi up
+```
+
+**被 LuCI 迁移炸掉后的恢复方法**：
+
+```bash
+uci set wireless.wifi0.hwmode=11axa
+uci set wireless.wifi1.hwmode=11axg
+uci commit wireless
+rm -f /var/run/wifilock
+/sbin/wifi down; sleep 2; /sbin/wifi up
+```
+
+验证：`iwconfig` 必须显示 `802.11axa` / `802.11axg`。
+
+---
+
 ## 1. WiFi 系统架构图
 
 ```
