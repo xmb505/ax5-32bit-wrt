@@ -36,45 +36,58 @@
 ```
 .
 ├── doc/                        # 📄 2000+ 行极致开发与调试手册
-│   ├── CURRENT_WORK.md         # 进度交接
-│   ├── INCIDENT_2026-08-20.md  # 调试事故复盘 (必读,教训清单)
-│   ├── NWRT_WIFI_BOOT_FLOW.md  # NWRT WiFi 启动流程深度剖析
-│   ├── NWRT_FACTORY_REFERENCE.md # NWRT 原厂 vs 我们 rootfs 核心对比
-│   └── WIFI_IMPLEMENTATION.md  # 🛠️ 开发者速查手册 (文件、命令、调试技巧)
+│   ├── INCIDENT_2026-08-26_V21.md     # 🌟 v21.0 集成 haku_wrt 1.1.2 实机冷启动验证记录
+│   ├── INCIDENT_2026-08-23_V205.md    # v20.5 UBI init error 22 砖机修复 (-m 2048 -s 2048)
+│   ├── RELEASE_2026-08-21_V17.md      # v17.0 双频 WiFi + LuCI 25.12 实机冷启动验证
+│   ├── INCIDENT_2026-08-21_V15.md     # v15.0 端口变更 + 时区调整 (uhttpd :80, CST-8)
+│   ├── INCIDENT_2026-08-21_QODER_V142.md  # qoder v14.2 接力事故复盘
+│   ├── CURRENT_WORK.md                # 进度交接
+│   ├── NWRT_FACTORY_REFERENCE.md      # NWRT 原厂 vs 我们 rootfs 核心对比
+│   ├── NWRT_WIFI_BOOT_FLOW.md         # NWRT WiFi 启动流程深度剖析
+│   └── WIFI_IMPLEMENTATION.md         # 🛠️ 开发者速查手册
 │
-├── release/                    # 📦 真正有用的烧写包与脚本 (38MB)
-│   ├── ax5-32bit-v14.3-release.ubi     # 🌟 24.2MB 最终 UBI 刷写固件 (v13.9 + dropbear 2026.94 + LuCI 26.232 + TLS/NTP/ECDSA cert)
-│   ├── ax5-32bit-v14.3-rootfs.squashfs # 🛠️ 18.4MB 拼装好的满血 rootfs (squashfs-xz)
-│   ├── ax5-32bit-v14.3-kernel-fit.itb  # 3.9MB standalone 内核 FIT image (v13.9 同款, NWRT 5.4.213 签名)
-│   ├── .config                         # 281KB 编译配置参考
-│   ├── ubinize-v143.cfg                    # UBI 卷配置文件 (v14.3)
-│   ├── customize.sh                    # 🎨 一键"塞自定义文件 + 重打包 UBI"脚本
-│   ├── customize/                      # 📂 你的自定义文件按目标路径放这里
-│   ├── CUSTOMIZE.md                    # 📖 自定义 rootfs 完整指南
-│   ├── pack-ubi.sh                     # ⚙️ 一键重新拼装为 .ubi 镜像的脚本
-│   ├── build.sh                        # 🚀 路由器 SSH 一键烧写脚本 (sys1 -> sys2 互刷)
-│   ├── flash-via-tftp.sh               # 🚑 串口 TFTP 应急救援脚本 (变砖用)
-│   └── CHECKSUM.txt                    # 校验和与手工拼装流程说明
+├── release/                    # 📦 真正有用的烧写包与脚本 (约 80MB)
+│   ├── ax5-32bit-v21.0-hakuwrt-release.ubi     # 🌟 24.5MB 当前活跃 UBI (haku_wrt 1.1.2 + 实机验证)
+│   ├── ax5-32bit-v21.0-hakuwrt-rootfs.squashfs # 🛠️ 19.4MB 拼装好的满血 rootfs
+│   ├── ax5-32bit-v21.0-hakuwrt-kernel-fit.itb  # 3.9MB NWRT 5.4.213 签名内核 (与 v17/v20.3 byte-identical)
+│   ├── ax5-32bit-v20.6-hakuwrt-release.ubi     # 24.1MB 上一个稳定版 (haku_wrt 1.0.20, sys2 fallback)
+│   ├── ax5-32bit-v17.0-release.ubi             # 21.0MB haku_wrt 之前的实机验证版本
+│   ├── .config                                 # 281KB 编译配置参考
+│   ├── ubinize-v210.cfg                        # UBI 卷配置 (kernel 4M + rootfs 21M + overlay autoresize)
+│   ├── build.sh                                # 🚀 路由器 SSH 一键烧写脚本 (智能识别 sys1/sys2)
+│   ├── customize.sh                            # 🎨 一键"塞自定义文件 + 重打包 UBI"脚本
+│   ├── customize/                              # 📂 注入层文件按目标路径放这里
+│   ├── pack-ubi.sh                             # ⚙️ UBI 打包脚本 (mtd-utils 2.1.1 + 正确参数)
+│   ├── flash-via-tftp.sh                       # 🚑 串口 TFTP 应急救援脚本
+│   └── CHECKSUM.txt                            # 校验和与手工拼装流程说明
+│
+├── hakuwrt/                    # 📋 haku_wrt 本地源码树 (GitHub morden_wrt_control_panel ax5 分支镜像)
+│   ├── files/                  # 注入到 customize/ 的 haku_wrt 二进制 + config.json + 资源
+│   ├── FACTORY_FLASHING.md     # 工厂流水线刷写规范
+│   ├── WIFI_OPERATIONS.md      # WiFi 操作命令速查
+│   └── CODE_REVIEW_ax5.md      # haku_wrt 代码审查报告
 │
 └── README.md                   # 本文件
 ```
 
 ---
 
-## 3. 实测状态 (2026-08-21 验证通过)
+## 3. 实测状态 (2026-08-26 验证通过 — v21.0)
 
 | 组件 | 状态 | 说明 |
 |---|---|---|
 | **Kernel** | NWRT 5.4.213 (32-bit ARM) ✅ | 高精度剥离 4KB 垃圾头，绕过小米 U-Boot 校验 |
-| **LuCI** | git-26.232 (2026 主线版) ✅ | v14.3 升级：模块化架构 + JS 视图 + 中文，实机登录/数据链路验证通过 |
-| **HTTPS** | uhttpd :443 + ECDSA P-256 cert ✅ | v14.3 新增：libustream-ssl + libmbedtls 2.16.12 + 825d 自签名 |
-| **NTP** | 5 server + CST-8 + sysntpd 默认 enabled ✅ | v14.3 新增：自动时区 + busybox ntpd |
-| **WiFi 5G** | `Nwrt_5G`, chan 149, 802.11axa ✅ | Master 模式，WPA2-PSK 正常，**不设 WPA2-PSK 连不上** |
-| **WiFi 2.4G** | `Nwrt_2.4G`, chan 13, 802.11axg ✅ | Master 模式，WPA2-PSK 正常 |
-| **密码** | `12345678` ✅ | 默认配置已置于 squashfs 只读层 |
+| **LuCI** | git-25.12 + LuCI 26.232 双轨 ✅ | v17+ 实机登录/数据链路验证通过 |
+| **uhttpd** | :81 (LuCI 后端) + :443 (HTTPS) ✅ | v15+ 端口变更 |
+| **haku_wrt** | **ver1.1.2** (git 73a05e8, 8.52MB) ✅ | **v21.0 升级**:+11 config.json 字段 (easter_egg / cpu_model / wifi_chip 等) |
+| **NTP** | 5 server + CST-8 + sysntpd 默认 enabled ✅ | v14.3+: 自动时区 + busybox ntpd |
+| **WiFi 5G** | `Nwrt_5G`, chan 149, 802.11axa ✅ | Master 模式，WPA2-PSK 正常 |
+| **WiFi 2.4G** | `Nwrt_2.4G`, chan 13, 802.11axg ✅ | Master 模式，WPA2-PSK 正常 (v17+ 冷启动即可搜索) |
+| **密码** | 实际路由器: `nekoneko` (LuCI); 空密码 SSH 也支持 ✅ | v15+ dropbear 空密码 patch + 实测 |
 | **DHCP** | `dnsmasq` (`udp 0.0.0.0:67`) ✅ | 补齐 `libnettle.so.8.4` 和 `libhogweed.so.6.4` 实文件后完美运行 |
 | **br-lan** | ath0 + ath1 + eth0/1/2 ✅ | 桥接完美, 手机/笔记本可连 |
-| **NSS 加速** | NSS Core 0 满血启动 ✅ | NSS0-retail 固件完备, 加密与转发满血硬件加速 |
+| **NSS 加速** | NSS Core 0 满血启动 + wifili offload ✅ | NSS0-retail 固件完备, 加密与转发满血硬件加速 |
+| **双分区 fallback** | sys1 (mtd18) ↔ sys2 (mtd19) ✅ | 当前 sys1=v21.0, sys2=v20.6, 互刷秒切 |
 
 ---
 
@@ -88,19 +101,18 @@ git clone -b AX5-NwrtKernel https://github.com/xmb505/ax5-32bit-wrt.git
 cd ax5-32bit-wrt/release
 
 # 2. 把烧写包推送到路由器 /tmp/ 目录下
-scp -O -o HostKeyAlgorithms=+ssh-rsa ax5-32bit-v14.3-release.ubi root@192.168.1.1:/tmp/
+scp -O -o HostKeyAlgorithms=+ssh-rsa ax5-32bit-v21.0-hakuwrt-release.ubi root@10.11.12.1:/tmp/
 
-# 3. 登录路由器, 运行 build.sh (或手动运行以下三行命令)
-ssh -o HostKeyAlgorithms=+ssh-rsa root@192.168.1.1
+# 3. 登录路由器, 运行 build.sh (智能识别当前 sys, 自动烧对侧)
+ssh -o HostKeyAlgorithms=+ssh-rsa root@10.11.12.1
 # [在路由器上运行]
-ubiformat /dev/mtd19 -f /tmp/ax5-32bit-v14.3-release.ubi
-fw_setenv flag_boot_rootfs 1
-fw_setenv flag_try_sys1_failed 1
-fw_setenv flag_try_sys2_failed 0
-reboot
+./build.sh          # 默认烧 v21.0; ./build.sh v22.0 烧别的版本
 ```
 
-🎉 **完工。** 手机直接搜索 `Nwrt_5G` / `Nwrt_2.4G`, 密码 `12345678` 连入，立刻拿 IP，满血运行！
+🎉 **完工。** 等 90s 让新 sys 启动, 然后访问:
+- `https://10.11.12.1:81/` — LuCI 后台 (root / nekoneko)
+- `http://10.11.12.1/` — haku_wrt Web 面板 (ver1.1.2 已就位)
+- 手机搜 `Nwrt_5G` / `Nwrt_2.4G`, 密码 `12345678` 连入 WiFi
 
 ---
 
@@ -112,7 +124,7 @@ reboot
 # 在 U-Boot 终端输入以下命令 (开发机 TFTP 设为 192.168.31.100):
 setenv serverip 192.168.31.100
 setenv ipaddr 192.168.31.1
-tftpboot 0x44000000 ax5-32bit-v14.3-release.ubi
+tftpboot 0x44000000 ax5-32bit-v21.0-hakuwrt-release.ubi
 nand erase 0x1180000 0x2400000
 nand write 0x44000000 0x1180000 ${filesize}
 reset
@@ -148,9 +160,11 @@ mkdir -p customize/usr/bin
 cp myapp customize/usr/bin/ && chmod +x customize/usr/bin/myapp
 
 # 2. 一键重打包 (自动 unsquashfs -> 注入 -> mksquashfs xz -> ubinize)
-./customize.sh
+./customize.sh                  # 默认 v21.0
+./customize.sh v22.0            # 指定别的版本
 
-# 3. 刷 ax5-32bit-v14.3-release-custom.ubi (方法同第 4 节)
+# 3. 烧新 UBI (方法同第 4 节)
+ssh root@10.11.12.1 './build.sh'
 ```
 
 整个流程只要 **30 秒**。原理、坑点（必须 xz 压缩、卷名必须叫 `rootfs`、别动内核卷等）详见 **[`release/CUSTOMIZE.md`](release/CUSTOMIZE.md)**。

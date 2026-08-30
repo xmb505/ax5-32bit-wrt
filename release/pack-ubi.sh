@@ -1,38 +1,59 @@
 #!/bin/sh
-# AX5-32Bit v15.0 - Stitch kernel + rootfs into .ubi image
+# AX5-32Bit - Stitch kernel + rootfs + overlay into .ubi image
 #
-# Use this when you have modified 'ax5-32bit-v15.0-rootfs.squashfs'
+# Use this when you have modified 'ax5-32bit-vXX.X-rootfs.squashfs'
 # (e.g. via unsquashfs/mksquashfs) and want to rebuild the final '.ubi'
 # flash image.
 #
-# Dependencies: 'ubinize' from mtd-utils (sudo apt install mtd-utils)
+# VER is the version string (e.g. v21.0). It looks for:
+#   ubinize-${VER}.cfg
+#   ax5-32bit-${VER}-hakuwrt-kernel-fit.itb
+#   ax5-32bit-${VER}-hakuwrt-rootfs.squashfs
+# Outputs:
+#   ax5-32bit-${VER}-hakuwrt-release.ubi
+#
+# ⚠️  CRITICAL — NAND 参数 (2026-08-23 INCIDENT 修正)
+#   AX5 NAND 真实硬件参数: page=4096, sub-page=2048, PEB=128KiB
+#   必须用 mtd-utils 2.1.1 的 ubinize + `-m 2048 -p 128KiB -s 2048`
+#   - 系统默认 mtd-utils (2.3.0) 的 ubinize 不行,EC header 兼容性差
+#   - -m 4096 -s 4096 是错的 (INCIDENT_V15 文档错误,已修正)
 
 set -e
+cd "$(dirname "$0")"
 
-CFG="ubinize-v150.cfg"
-OUT="ax5-32bit-v15.0-release-custom.ubi"
+VER="${1:-v21.0}"
+CFG="ubinize-${VER#v}.cfg"
+KERNEL="ax5-32bit-${VER}-hakuwrt-kernel-fit.itb"
+ROOTFS="ax5-32bit-${VER}-hakuwrt-rootfs.squashfs"
+OUT="ax5-32bit-${VER}-hakuwrt-release.ubi"
 
-if [ ! -f "$CFG" ]; then
-    echo "ERROR: $CFG not found"
+UBINIZE="/home/xmb505/immortalwrt/ax5-32bit/src/staging_dir/host/bin/ubinize"
+
+for f in "$CFG" "$KERNEL" "$ROOTFS"; do
+    if [ ! -f "$f" ]; then
+        echo "ERROR: $f not found in $(pwd)"
+        exit 1
+    fi
+done
+
+if [ ! -x "$UBINIZE" ]; then
+    echo "ERROR: mtd-utils 2.1.1 ubinize not found at $UBINIZE"
+    echo "       (system /usr/sbin/ubinize 2.3.0 is incompatible, do NOT use it)"
     exit 1
 fi
 
-if [ ! -f "ax5-32bit-v15.0-kernel-fit.itb" ]; then
-    echo "ERROR: Kernel FIT not found"
-    exit 1
-fi
+echo "=== Packaging UBI image ($VER) ==="
+echo "  kernel:  $KERNEL ($(stat -c%s "$KERNEL") bytes)"
+echo "  rootfs:  $ROOTFS ($(stat -c%s "$ROOTFS") bytes)"
+echo "  cfg:     $CFG"
+echo "  ubinize: $($UBINIZE -V)"
+echo "  out:     $OUT"
+echo ""
 
-if [ ! -f "ax5-32bit-v15.0-rootfs.squashfs" ]; then
-    echo "ERROR: Rootfs SquashFS not found"
-    exit 1
-fi
+# ⚠️ -m 2048 -p 128KiB -s 2048 (NOT -m 4096 -s 4096!)
+"$UBINIZE" -o "$OUT" -m 2048 -p 128KiB -s 2048 "$CFG"
 
-echo "=== Packaging UBI image ==="
-# -m 4096: Minimum I/O size (4KB - matches NWRT kernel UBI header stride)
-# -p 128KiB: Physical Erase Block size (128KB for AX5 NAND)
-# -s 4096: Sub-page size (matches v13.9/v14.3/v15.0 baseline)
-ubinize -o "$OUT" -m 4096 -p 128KiB -s 4096 "$CFG"
-
+echo ""
 echo "=== SUCCESS! ==="
-echo "Stitched image: $OUT"
+echo "Stitched image: $OUT ($(stat -c%s "$OUT") bytes)"
 sha256sum "$OUT"

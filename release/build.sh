@@ -1,39 +1,67 @@
 #!/bin/sh
-# AX5-32Bit v15.0 release - flash to mtd19 (rootfs_1 / sys2)
+# AX5-32Bit - Flash release.ubi to the OPPOSITE sys partition and switch to it
 #
-# v15.0 changes (vs v14.3):
-#   - uhttpd listen_http :81 → :80 (抢回 port 80, 不上 haku_wrt)
-#   - 时区明确: zonename 'Asia/Shanghai' (注释里标 "北京时间 (UTC+8, CST-8)")
-#   - dropbear RSA host key 重新生成 (v15 专用, 与 v14.3 不同)
-#   - uhttpd cert config 'key_type ec' (default 用 ECDSA P-256)
-#   - 其它与 v14.3 一致: dropbear 2026.94 / LuCI 26.232 / TLS via libustream-ssl + libmbedtls / NTP 5 server / sysntpd enabled
+# Usage: ./build.sh [VER]
+#   VER defaults to v21.0 (latest verified release).
+#   Reads  ax5-32bit-${VER}-hakuwrt-release.ubi
 #
-# kernel FIT byte-identical to v13.9 (NWRT 5.4.213, Secure Boot signed).
+# What this does (double-partition safe):
+#   1. Picks the sys partition OPPOSITE to the one currently running
+#      (cmdline says ubi.mtd=rootfs  →  running sys1 (mtd18), flash sys2 (mtd19)
+#       cmdline says ubi.mtd=rootfs_1 → running sys2 (mtd19), flash sys1 (mtd18))
+#   2. ubiformat that partition
+#   3. Set flag_boot_rootfs to the new side, mark the old side as failed
+#      (so U-Boot fallbacks here if new side doesn't boot)
+#   4. reboot
 #
-# CRITICAL: keeps flag_try_sys1_failed=0 so sys1 (v13.9) remains a fallback.
-# If v15.0 fails to boot, AX5 will auto-rollback to sys1 after ~3 reboots.
+# CRITICAL: the OLD side is marked failed=1 so U-Boot will rollback after
+# ~3 boot attempts if the new side doesn't come up. Keep this side as fallback.
 
 set -e
 
-UBI="ax5-32bit-v15.0-release.ubi"
+VER="${1:-v21.0}"
+UBI="ax5-32bit-${VER}-hakuwrt-release.ubi"
 
 if [ ! -f "$UBI" ]; then
     echo "ERROR: $UBI not found in $(pwd)"
     exit 1
 fi
 
-echo "=== Sanity check: current boot flags ==="
+# Detect current side
+CMDLINE=$(cat /proc/cmdline)
+case "$CMDLINE" in
+    *ubi.mtd=rootfs*)     CURRENT=1; TARGET=2; TARGET_MTD=/dev/mtd19; TARGET_NAME=rootfs_1 ;;
+    *ubi.mtd=rootfs_1*)   CURRENT=2; TARGET=1; TARGET_MTD=/dev/mtd18; TARGET_NAME=rootfs   ;;
+    *)
+        echo "ERROR: cannot detect current sys from cmdline: $CMDLINE"
+        exit 1
+        ;;
+esac
+
+echo "=== AX5-32Bit $VER flash (sys${CURRENT} → sys${TARGET}) ==="
+echo "  current cmdline : $CMDLINE"
+echo "  target          : sys${TARGET} = ${TARGET_MTD} (${TARGET_NAME})"
+echo "  ubi image       : $UBI ($(stat -c%s "$UBI") bytes)"
+echo
+
+echo "=== Current boot flags ==="
 fw_printenv flag_boot_rootfs flag_try_sys1_failed flag_try_sys2_failed 2>/dev/null || true
+echo
+
+echo "=== Format ${TARGET_MTD} with $UBI (this can take 1-2 min) ==="
+ubiformat "$TARGET_MTD" -f "$UBI" -y
 
 echo
-echo "=== Format mtd19 (rootfs_1 / sys2) with $UBI ==="
-ubiformat /dev/mtd19 -f "$UBI" -y
-
-echo
-echo "=== Set env: boot from sys2, sys1 stays as fallback ==="
-fw_setenv flag_boot_rootfs 1
-fw_setenv flag_try_sys1_failed 0
-fw_setenv flag_try_sys2_failed 1
+echo "=== Set env: boot sys${TARGET}, mark sys${CURRENT} failed for rollback ==="
+if [ "$TARGET" = "2" ]; then
+    fw_setenv flag_boot_rootfs 1
+    fw_setenv flag_try_sys1_failed 1
+    fw_setenv flag_try_sys2_failed 0
+else
+    fw_setenv flag_boot_rootfs 0
+    fw_setenv flag_try_sys1_failed 0
+    fw_setenv flag_try_sys2_failed 1
+fi
 
 echo
 echo "=== Reboot ==="

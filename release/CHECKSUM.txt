@@ -1,112 +1,114 @@
-AX5-32Bit v17.0 release (active)
-v15.0 (superseded, kept below for reference)
-======================
+AX5-32Bit v22.0 release (实机冷启验证通过, 2026-08-28)
+============================================
+
+基于 v21.0 rootfs 外科手术式更新:
+  - /usr/bin/haku_wrt: ver1.1.2 (git 73a05e8) → ver1.1.3 (8,519,864 B, git 8dc368a, 2026-08-28)
+  - /etc/morden_web/config.json: +update_user/update_pass, update_url → crypto_xiaobai/ax5
+  - 新增: 剥离全部 ddns-go 残留 (S99ddns-go 悬空链接 / etc/ddns-go / usr/share/ddns-go /
+    luci-app-ddns-go 页面 + ACL) —— 用户 2026-08-28 决定干掉 ddns-go
+  - ddns-scripts (shell 版) 保留, 默认占位配置, 惰性
+
+  ax5-32bit-v22.0-hakuwrt-release.ubi      24,510,464 B
+    SHA256 aa401f56dc4458e933240b574f3cd324ab730dbf28a4e431ea5715a1d6208510
+  ax5-32bit-v22.0-hakuwrt-rootfs.squashfs  19,431,424 B
+    SHA256 7141d00ac8c9852ce6647eb6158a3154a201009dc9088be05e3a91c4b85b0a08
+  ax5-32bit-v22.0-hakuwrt-kernel-fit.itb   3,936,256 B (NWRT 5.4.213 签名, byte-identical)
+    SHA256 764cff00c76692b2e8627cd881bcf3da183b4146a387571014176971cd21e0f2
+
+AX5-32Bit v21.0 release (实机验证通过, 2026-08-26)
+============================================
 
 **⚠️ 这是手工拼出来的镜像,不是 OpenWrt `make` 编译产物。**
 
 不要指望 clone + `cd src && make` 能产出这个 `.ubi`。
-这是从 v13.9 (NWRT QSDK 12.2 factory rootfs + 4KB-剥离 kernel FIT) 为基线,
-手工叠加以下现代化组件后拼出来的:
+这是从 v20.6 (NWRT QSDK 12.2 factory rootfs + 4KB-剥离 kernel FIT) 为基线,
+外科手术式替换了 `haku_wrt` 二进制和 `config.json`,其他 3173 个文件全部继承 v20.6。
 
-  - dropbear v2026.94 + baked RSA-2048 host key (首启 SSH 不会 reset)
-  - LuCI git-26.232 (2026 mainline, 模块化架构 + JS 视图)
-  - libustream-ssl + libmbedtls 2.16.12 (让 uhttpd 走 TLS via mbedtls)
-  - ECDSA P-256 server cert (CN=AX5-<last 6 MAC>, SAN: 192.168.1.1, openwrt.lan, xiaomi.router, 127.0.0.1, 825天)
-  - uhttpd HTTP 监听 **:80** (不是 :81), HTTPS :443, HTTP→HTTPS 307 自动 redirect
-  - 时区 **CST-8** + zonename `Asia/Shanghai` (= 北京时间, UTC+8)
-  - sysntpd 默认 enabled, 5 个 NTP server
-    (0.pool/1.pool/cn.pool/ntp.aliyun/time1.cloud.tencent)
-  - root 密码 'password ' (SHA-512 hash 进 /etc/shadow)
-  - **不装 haku_wrt** (用户明确要求)
-  - 内核 FIT 与 v13.9 byte-identical (Secure Boot 签名, NWRT 5.4.213)
+v21.0 改动 = 仅 2 个文件:
+  - /usr/bin/haku_wrt: ver1.0.20 (7,667,896 B, git d15527f) → ver1.1.2 (8,519,864 B, git 73a05e8)
+  - /etc/morden_web/config.json: ver1.0.20 (32 字段) → ver1.1.2 (43 字段, +11 字段)
 
-详细拼装步骤、坑、修法都在 ../doc/ 里:
+完整拼装步骤、坑、修法都在 ../doc/ 里:
 
-  - ../doc/NWRT_FACTORY_REFERENCE.md - 整个手工拼装流程
-  - ../doc/NWRT_WIFI_BOOT_FLOW.md - NWRT boot 序列分析
-  - ../doc/WIFI_IMPLEMENTATION.md - WiFi 配置 + debug
-  - ../doc/INCIDENT_2026-08-20.md - 调试事故复盘
-  - ../doc/INCIDENT_2026-08-21_QODER_V142.md - qoder v14.2 接力复盘
-  - ../doc/INCIDENT_2026-08-21_V15.md - v15.0 端口变更 + 时区调整记录 (待写)
+  - ../doc/INCIDENT_2026-08-26_V21.md      🌟 v21.0 集成 haku_wrt 1.1.2 实机验证记录 (本次)
+  - ../doc/INCIDENT_2026-08-23_V205.md     v20.5 UBI init error 22 砖机修复 (ubinize -m 2048 -s 2048)
+  - ../doc/RELEASE_2026-08-21_V17.md       v17.0 双频 WiFi + LuCI 25.12 + 实机冷启动验证
+  - ../doc/INCIDENT_2026-08-21_V15.md      v15.0 端口变更 + 时区调整 (uhttpd :80, CST-8)
+  - ../doc/INCIDENT_2026-08-21_QODER_V142.md  qoder v14.2 接力事故复盘
+  - ../doc/NWRT_FACTORY_REFERENCE.md      NWRT 原厂 vs 我们 rootfs 核心对比
+  - ../doc/NWRT_WIFI_BOOT_FLOW.md          NWRT WiFi 启动流程深度剖析
+  - ../doc/WIFI_IMPLEMENTATION.md          开发者速查手册
 
 要重新做一版不一样的,看 CUSTOMIZE.md (快速自定义) 或
 NWRT_FACTORY_REFERENCE.md §6 (深度修补清单)。
 
 ---
 
-Files in this directory:
+Files in this directory (默认构建产物,横线以上是实机验证通过的推荐版本):
 
-  ax5-32bit-v15.0-release.ubi      24.2MB   🌟 最终 UBI 镜像 (推荐刷这个)
-  ax5-32bit-v15.0-kernel-fit.itb   3.9MB    单独的 kernel FIT image
-  ax5-32bit-v15.0-rootfs.squashfs  18.4MB   rootfs (squashfs-xz)
+  ax5-32bit-v21.0-hakuwrt-release.ubi      24.5MB   实机验证通过 (haku_wrt 1.1.2, 当前在 sys2 fallback)
+  ax5-32bit-v21.0-hakuwrt-kernel-fit.itb   3.9MB    kernel FIT (NWRT 5.4.213 签名, byte-identical)
+  ax5-32bit-v21.0-hakuwrt-rootfs.squashfs  19.4MB   rootfs (squashfs-xz, 注入 haku_wrt 1.1.2)
 
-  ax5-32bit-v14.3-release.ubi      24.2MB   备份 (跟 v15.0 几乎一样, 只是 uhttpd 还是 :81)
-  ax5-32bit-v14.3-kernel-fit.itb   3.9MB
-  ax5-32bit-v14.3-rootfs.squashfs  18.4MB
+  ax5-32bit-v20.6-hakuwrt-release.ubi      24.1MB   上一个稳定版 (haku_wrt 1.0.20, 当前在 sys2 fallback)
+  ax5-32bit-v20.6-hakuwrt-rootfs.squashfs  19.2MB   v21.0 的基线
+
+  ax5-32bit-v17.0-release.ubi              21.0MB   haku_wrt 之前的实机验证版本
+  ax5-32bit-v17.0-kernel-fit.itb           3.9MB
+  ax5-32bit-v17.0-rootfs.squashfs         16.1MB
 
   .config                          281KB    OpenWrt build config (参考,不能直接 make 出镜像)
-  build.sh                         SSH 烧写脚本 (正常运行流程, 保留 sys1 fallback)
+  build.sh                         路由器 SSH 烧写脚本 (智能识别当前/目标 sys 分区)
   flash-via-tftp.sh                串口/TFTP 救援脚本 (砖了用)
-  customize.sh + customize/        一键自定义 rootfs 工具 (见 CUSTOMIZE.md)
-  ubinize-v150.cfg                 v15.0 UBI 卷配置
-  ubinize-v143.cfg                 v14.3 UBI 卷配置
+  customize.sh + customize/        一键自定义 rootfs + 重打包脚本 (见 CUSTOMIZE.md)
+  pack-ubi.sh                     UBI 打包脚本 (mtd-utils 2.1.1 + -m 2048 -s 2048)
+  ubinize-v210.cfg                 v21.0 UBI 卷配置 (kernel 4M + rootfs 21M + overlay autoresize)
 
 SHA256:
 
-  ax5-32bit-v17.0-release.ubi:     0885bc9dfea0886ae0b8431febcee33e0252a81cea2139acdc7fba28a40522bf
-  ax5-32bit-v17.0-kernel-fit.itb:  764cff00c76692b2e8627cd881bcf3da183b4146a387571014176971cd21e0f2
-  ax5-32bit-v17.0-rootfs.squashfs: 74cf5204e518fb9a17bdafef3b7f2591e6f01a90f2af97570c9a1b2cf220f2c0
+  ax5-32bit-v21.0-hakuwrt-release.ubi:    87556f37a3a8f452bb1415e1fc102b69275ba24c8627bf2ffbda8c7fff7b43c8
+  ax5-32bit-v21.0-hakuwrt-kernel-fit.itb: 764cff00c76692b2e8627cd881bcf3da183b4146a387571014176971cd21e0f2
+  ax5-32bit-v21.0-hakuwrt-rootfs.squashfs: ade141838725d277c55ed42cf7ba34659222d12a54d644529ce1b25074433fe1
 
-  ax5-32bit-v15.0-release.ubi:     353d0bea75b4b6ac930d419cd3b5e0f05e23074873fae174eb95d7477628fa1a
-  ax5-32bit-v15.0-kernel-fit.itb:  1510b6d65088a88ca60f04e8cf0e22c350ddfbbc1a32c0471749c2c9257891c0
-  ax5-32bit-v15.0-rootfs.squashfs: 31b9ff36e1a6346e1abe09d88aaa26e48c5dd60428f60502da2115a5a71b3ec5
+  ax5-32bit-v20.6-hakuwrt-release.ubi:    8d2ad0cd30d53858958b35d8bb0adace0ac44b1d2b06e24734181ba1a48b5620
+  ax5-32bit-v20.6-hakuwrt-rootfs.squashfs: 03998adc090775fcc7c94e8df1417d700903d5a4494bb8bb0b929742f92048d2
+  ax5-32bit-v20.3-hakuwrt-kernel-fit.itb:  764cff00c76692b2e8627cd881bcf3da183b4146a387571014176971cd21e0f2
 
-  ax5-32bit-v14.3-release.ubi:     c3e457d35b8ebf58d78cf0a1a3992f815cbfc61bded854ae13c95370d0d4fa79
-  ax5-32bit-v14.3-kernel-fit.itb:  1510b6d65088a88ca60f04e8cf0e22c350ddfbbc1a32c0471749c2c9257891c0
-  ax5-32bit-v14.3-rootfs.squashfs: 8700e4b47a39608f6f9910893467fb6b4a0ebc255df98ff5f7aac6058bd82ac8
+  ax5-32bit-v17.0-release.ubi:            0885bc9dfea0886ae0b8431febcee33e0252a81cea2139acdc7fba28a40522bf
+  ax5-32bit-v17.0-kernel-fit.itb:         764cff00c76692b2e8627cd881bcf3da183b4146a387571014176971cd21e0f2
+  ax5-32bit-v17.0-rootfs.squashfs:        74cf5204e518fb9a17bdafef3b7f2591e6f01a90f2af97570c9a1b2cf220f2c0
 
-  .config:                         84efc08a8eacd5c7969cc6a252949fb5c91c824e172562440d6d823028acf017
+  .config:                                84efc08a8eacd5c7969cc6a252949fb5c91c824e172562440d6d823028acf017
 
----
-
-WiFi (NWRT factory stack; v17 起 2.4G 冷启动即可搜索连接):
-
-  5G:    Nwrt_5G,  chan 149, 802.11axa, WPA2-PSK, password 12345678
-  2.4G:  Nwrt_2.4G, chan 13,  802.11axg, WPA2-PSK, password 12345678
+> 💡 kernel-fit SHA 在 v17/v20.3/v21.0 三个版本里完全相同 — 都是 NWRT 5.4.213 Secure Boot
+> 签名内核,Secure Boot 强制要求 byte-identical 才能通过校验。
 
 ---
 
-## 上手步骤 (v15.0)
+## 上手步骤 (v21.0)
 
-1. **正常烧写 (sys1 → sys2 + 切 sys2):**
+1. **正常烧写 (智能识别当前分区,自动烧对侧 sys):**
    ```
    cd release/
-   ./build.sh
-   # 烧完后等 60-90s 让 sys2 启动
-   ssh root@192.168.1.1
-   #   root 密码: password
+   ./build.sh                # 默认烧 v21.0
+   # 或 ./build.sh v22.0     # 指定别的版本
+   # 烧完后等 90s 让新 sys 启动
+   ssh root@10.11.12.1
+   #   root 密码: nekoneko (预留空密码也支持, v15+ 修补)
    ```
 
-2. **uhttpd 验证:**
+2. **验证 haku_wrt 1.1.2 已就位:**
    ```
-   # HTTP 应自动 307 重定向到 HTTPS
-   curl -I http://192.168.1.1/
-
-   # LuCI 直接 HTTPS (self-signed, -k 跳过 cert 校验)
-   curl -kI https://192.168.1.1/cgi-bin/luci
-
-   # Cert 信息 (ECDSA P-256 + SAN + 825d)
-   echo | openssl s_client -connect 192.168.1.1:443 -servername openwrt.lan 2>/dev/null | \
-       openssl x509 -noout -subject -dates -ext subjectAltName,extendedKeyUsage
+   ssh root@10.11.12.1 'grep version /etc/morden_web/config.json'
+   # 期望: "version": "2026-08-26 ver1.1.2"
    ```
 
-3. **NTP / 时区 验证:**
+3. **LuCI + haku_wrt 验证:**
    ```
-   date                          # 应显示 CST-8 时区 (北京时间)
-   ps | grep ntpd                # busybox ntpd 应在跑
-   /etc/init.d/sysntpd status    # enabled
-   uci show system.ntp            # 5 个 server
-   uci show system | grep -E "timezone|zonename"
+   # uhttpd :81 (LuCI)
+   curl -kI https://10.11.12.1:81/cgi-bin/luci
+   # haku_wrt :80 (Web 面板)
+   curl -kI http://10.11.12.1/
    ```
 
 4. **紧急 TFTP 救援 (砖了用):**
@@ -114,11 +116,11 @@ WiFi (NWRT factory stack; v17 起 2.4G 冷启动即可搜索连接):
    # 串口接上, U-Boot 提示符下跑 release/flash-via-tftp.sh 输出的命令
    ```
 
-5. **回退到 sys1 (v13.9):**
+5. **回退到上一个 sys 分区 (假设当前在 sys1 跑 v21.0,想回 sys2 跑 v20.6):**
    ```
-   ssh root@192.168.1.1
-   fw_setenv flag_boot_rootfs 0
-   fw_setenv flag_try_sys1_failed 0
-   fw_setenv flag_try_sys2_failed 1
+   ssh root@10.11.12.1
+   fw_setenv flag_boot_rootfs 1
+   fw_setenv flag_try_sys1_failed 1
+   fw_setenv flag_try_sys2_failed 0
    reboot
    ```
